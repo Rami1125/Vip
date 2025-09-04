@@ -371,15 +371,15 @@
                         action: action,
                         payload: payload
                     };
-
-                    Logger.info(`API Call Started: ${action}`, bodyPayload);
+                    const bodyString = JSON.stringify(bodyPayload);
+                    Logger.info(`API Call Started: ${action}`, `Sending body: ${bodyString}`);
 
                     const response = await fetch(url.toString(), {
                         method: 'POST',
                         mode: 'cors',
                         credentials: 'omit',
                         redirect: 'follow',
-                        body: JSON.stringify(bodyPayload),
+                        body: bodyString,
                          headers: {
                             'Content-Type': 'text/plain;charset=utf-8',
                         }
@@ -885,4 +885,6 @@
     </script>
 </body>
 </html>
+" and am asking the following query.
+אירעה שגיאה: פעולת POST לא חוקית: undefined
 
