@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>מערכת VIP ח. סבן</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Rubik', sans-serif;
+            background-color: #f0f2f5;
+        }
+        .samsung-s25-wrapper {
+            max-width: 420px;
+            height: 880px;
+            margin: 2rem auto;
+            background: #111;
+            border-radius: 40px;
+            padding: 12px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+            position: relative;
+        }
+        .samsung-s25-screen {
+            background: #ffffff;
+            height: 100%;
+            width: 100%;
+            border-radius: 30px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+        .status-bar {
+            height: 30px;
+            padding: 0 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 12px;
+            color: #333;
+            background: #fff;
+            z-index: 100;
+        }
+        .main-content {
+            flex-grow: 1;
+            overflow-y: auto;
+        }
+        .glassmorphism {
+            background: rgba(255, 255, 255, 0.3);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+        }
+        /* Page transition animation */
+        .page {
+            animation: fadeIn 0.5s ease-in-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body class="flex items-center justify-center min-h-screen">
+
+    <div class="samsung-s25-wrapper">
+        <div class="samsung-s25-screen" id="app-container">
+            <!-- Status Bar -->
+            <div class="status-bar">
+                <span id="current-time">09:41</span>
+                <div>
+                    <i class="fas fa-signal"></i>
+                    <i class="fas fa-wifi"></i>
+                    <i class="fas fa-battery-full"></i>
+                </div>
+            </div>
+            
+            <!-- Main Content Area -->
+            <main class="main-content" id="main-content">
+                <!-- Views will be rendered here -->
+            </main>
+        </div>
+    </div>
+
+    <!-- Templates for different views -->
+    <template id="login-view">
+        <div class="page flex flex-col items-center justify-center h-full bg-gray-100 p-6">
+            <img src="https://img.icons8.com/?size=100&id=20750&format=png&color=000000" alt="Logo" class="w-24 h-24 mb-6">
+            <h1 class="text-3xl font-bold text-gray-800 mb-2">ברוכים הבאים</h1>
+            <p class="text-gray-500 mb-8">מערכת VIP ח. סבן</p>
+            <div class="w-full">
+                <input id="phone-input" type="tel" placeholder="מספר טלפון" class="w-full p-4 mb-4 text-center border-2 border-gray-200 rounded-xl focus:outline-none focus:border-green-500">
+                <input id="password-input" type="password" placeholder="סיסמה" class="w-full p-4 mb-6 text-center border-2 border-gray-200 rounded-xl focus:outline-none focus:border-green-500">
+                <button id="login-btn" class="w-full bg-green-500 text-white font-bold py-4 rounded-xl hover:bg-green-600 transition duration-300">
+                    התחברות
+                </button>
+            </div>
+        </div>
+    </template>
+
+    <template id="dashboard-view">
+        <div class="page p-4">
+             <h1 class="text-2xl font-bold">דף הבית</h1>
+             <p class="text-gray-500">ברוך הבא, <span id="user-name"></span>!</p>
+             <!-- More dashboard content will go here -->
+        </div>
+    </template>
+
+    <script>
+        // Main Application Logic
+        const App = {
+            state: {
+                user: null,
+                currentPage: 'login',
+            },
+            
+            init() {
+                this.render();
+                setInterval(() => {
+                    document.getElementById('current-time').innerText = new Date().toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit' });
+                }, 1000);
+            },
+            
+            // Central function to make API calls to Google Apps Script
+            api: async function(action, payload = {}) {
+                const SCRIPT_URL = 'YOUR_GOOGLE_APPS_SCRIPT_URL_HERE'; // TODO: Replace with your deployed script URL
+                try {
+                    const response = await fetch(`${SCRIPT_URL}?action=${action}`, {
+                        method: 'POST',
+                        mode: 'cors',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+                    if (!response.ok) throw new Error('Network response was not ok');
+                    return await response.json();
+                } catch (error) {
+                    console.error('API Error:', error);
+                    // Add user-friendly error handling here
+                    return null;
+                }
+            },
+
+            handleLogin: async function() {
+                const phone = document.getElementById('phone-input').value;
+                const password = document.getElementById('password-input').value;
+                const loginBtn = document.getElementById('login-btn');
+                loginBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> מתחבר...';
+                loginBtn.disabled = true;
+
+                const result = await this.api('authenticateUser', { phone, password });
+
+                if (result && result.success) {
+                    this.state.user = result.user;
+                    this.navigateTo('dashboard');
+                } else {
+                    alert('שם משתמש או סיסמה שגויים');
+                    loginBtn.innerHTML = 'התחברות';
+                    loginBtn.disabled = false;
+                }
+            },
+
+            navigateTo(page) {
+                this.state.currentPage = page;
+                this.render();
+            },
+            
+            render() {
+                const mainContent = document.getElementById('main-content');
+                mainContent.innerHTML = '';
+                
+                let template;
+                switch (this.state.currentPage) {
+                    case 'dashboard':
+                        template = document.getElementById('dashboard-view').content.cloneNode(true);
+                        template.getElementById('user-name').innerText = this.state.user?.['שם לקוח'] || '';
+                        break;
+                    case 'login':
+                    default:
+                        template = document.getElementById('login-view').content.cloneNode(true);
+                        break;
+                }
+                mainContent.appendChild(template);
+                this.addEventListeners();
+            },
+
+            addEventListeners() {
+                if (this.state.currentPage === 'login') {
+                    document.getElementById('login-btn').addEventListener('click', () => this.handleLogin());
+                }
+            }
+        };
+
+        document.addEventListener('DOMContentLoaded', () => App.init());
+    </script>
+</body>
+</html>
