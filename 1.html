@@ -228,14 +228,56 @@
 
                 <main class="flex-grow overflow-y-auto">
                      <div id="dashboard-content" class="p-4 pt-4 space-y-6">
-                        <!-- Dashboard content as before -->
+                        <div id="user-info-card" class="card flex items-center p-4">
+                            <img id="user-avatar" class="w-16 h-16 rounded-full ml-4" src="https://img.icons8.com/?size=100&id=20750&format=png&color=000000" alt="User Avatar">
+                            <div>
+                                <h3 id="user-greeting" class="text-xl font-bold"></h3>
+                                <p id="user-phone" class="text-sm text-gray-500"></p>
+                            </div>
+                        </div>
+    
+                        <div id="map-section" class="card p-0 overflow-hidden">
+                            <div class="p-4 border-b">
+                                <h4 class="text-lg font-bold">פרויקטים שלי</h4>
+                                <p class="text-sm text-gray-500">מפה אינטראקטיבית של הפרויקטים הפעילים</p>
+                            </div>
+                            <div class="h-64 bg-gray-200 flex items-center justify-center relative">
+                                <i class="fas fa-map-marked-alt text-4xl text-gray-400"></i>
+                                <p class="absolute bottom-4 text-sm text-gray-500">מפת הפרויקטים תוטמע כאן</p>
+                            </div>
+                        </div>
+                        
+                        <div id="overdue-banner" class="bg-red-500 border border-red-700 text-white px-4 py-3 rounded-xl relative hidden cursor-pointer" role="alert">
+                            <strong class="font-bold">⚠️ התראה:</strong>
+                            <span class="block sm:inline">קיימות מכולות בסטטוס חורג. לחץ לסינון.</span>
+                        </div>
+                        
+                        <div class="card">
+                            <h4 class="text-lg font-bold mb-4">הזמנות פעילות</h4>
+                            <ul id="active-orders-list" class="space-y-4">
+                            </ul>
+                        </div>
                      </div>
                      <div id="order-wizard" class="p-4 hidden">
                         <h2 class="text-2xl font-bold text-center mb-6">יצירת הזמנה חדשה</h2>
                         <div id="wizard-steps" class="flex justify-between items-center mb-6"></div>
                         <div id="wizard-content"></div>
                      </div>
-                     <!-- Other content divs -->
+                     <div id="digital-store-content" class="p-4 hidden">
+                        <!-- Store content -->
+                     </div>
+                     <div id="history-content" class="p-4 hidden">
+                         <!-- History content -->
+                     </div>
+                     <div id="faqs-content" class="p-4 hidden">
+                        <!-- FAQs content -->
+                     </div>
+                     <div id="chat-content" class="p-4 hidden">
+                        <!-- Chat content -->
+                     </div>
+                     <div id="debug-content" class="p-4 hidden">
+                        <!-- Debug content -->
+                     </div>
                 </main>
 
                 <footer id="bottom-nav" class="w-full bg-white border-t border-gray-200 flex justify-around">
@@ -259,7 +301,22 @@
             </div>
             
             <nav id="hamburger-nav" class="fixed top-0 right-0 w-64 h-full bg-white shadow-xl p-6 z-50 transform translate-x-full transition-transform duration-300 ease-in-out">
-               <!-- Hamburger nav content -->
+               <div class="flex justify-between items-center mb-8">
+                <h3 class="text-xl font-bold">תפריט</h3>
+                <button id="close-hamburger-btn" class="text-2xl text-gray-600">&times;</button>
+            </div>
+            <ul class="space-y-4">
+                <li><a href="#" class="nav-link block p-3 rounded-xl hover:bg-gray-100 text-gray-800" data-target="dashboard-content"><i class="fas fa-tachometer-alt ml-2"></i>דאשבורד</a></li>
+                <li><a href="#" class="nav-link block p-3 rounded-xl hover:bg-gray-100 text-gray-800" data-target="order-wizard"><i class="fas fa-plus-circle ml-2"></i>הזמנה חדשה</a></li>
+                <li><a href="#" class="nav-link block p-3 rounded-xl hover:bg-gray-100 text-gray-800" data-target="digital-store-content"><i class="fas fa-store-alt ml-2"></i>חנות דיגיטלית</a></li>
+                <li><a href="#" class="nav-link block p-3 rounded-xl hover:bg-gray-100 text-gray-800" data-target="history-content"><i class="fas fa-history ml-2"></i>דוחות והיסטוריה</a></li>
+                <li><a href="#" class="nav-link block p-3 rounded-xl hover:bg-gray-100 text-gray-800" data-target="faqs-content"><i class="fas fa-question-circle ml-2"></i>שאלות ותשובות</a></li>
+                <li><a href="#" class="nav-link block p-3 rounded-xl hover:bg-gray-100 text-gray-800" data-target="chat-content"><i class="fas fa-comments ml-2"></i>צ'אט</a></li>
+                <hr/>
+                <li><a href="#" class="nav-link block p-3 rounded-xl hover:bg-gray-100 text-blue-600" data-target="debug-content"><i class="fas fa-bug ml-2"></i>ניפוי שגיאות</a></li>
+                <hr/>
+                <li><a href="#" id="logout-btn" class="nav-link block p-3 rounded-xl hover:bg-gray-100 text-red-500"><i class="fas fa-sign-out-alt ml-2"></i>התנתק</a></li>
+            </ul>
             </nav>
             <div id="nav-overlay" class="overlay"></div>
 
@@ -268,7 +325,7 @@
     </div>
     
     <div id="toast-notification" class="bg-yellow-500 text-white font-bold py-2 px-4 rounded-lg shadow-lg flex items-center">
-        <!-- Toast content -->
+        <span id="toast-message"></span>
     </div>
 
 
@@ -361,11 +418,18 @@
             bindEvents() {
                 document.getElementById('login-btn').addEventListener('click', () => this.login());
                 document.getElementById('phone-input').addEventListener('input', (e) => localStorage.setItem('last_phone', e.target.value));
-                document.getElementById('logout-btn').addEventListener('click', () => this.logout());
+                
+                const logoutBtn = document.getElementById('logout-btn');
+                if(logoutBtn) logoutBtn.addEventListener('click', () => this.logout());
 
-                document.getElementById('hamburger-btn').addEventListener('click', () => this.toggleHamburgerMenu(true));
-                document.getElementById('close-hamburger-btn').addEventListener('click', () => this.toggleHamburgerMenu(false));
-                document.getElementById('nav-overlay').addEventListener('click', () => this.toggleHamburgerMenu(false));
+                const hamburgerBtn = document.getElementById('hamburger-btn');
+                if(hamburgerBtn) hamburgerBtn.addEventListener('click', () => this.toggleHamburgerMenu(true));
+                
+                const closeHamburgerBtn = document.getElementById('close-hamburger-btn');
+                if(closeHamburgerBtn) closeHamburgerBtn.addEventListener('click', () => this.toggleHamburgerMenu(false));
+
+                const navOverlay = document.getElementById('nav-overlay');
+                if(navOverlay) navOverlay.addEventListener('click', () => this.toggleHamburgerMenu(false));
 
                 document.querySelectorAll('#hamburger-nav .nav-link, #bottom-nav .bottom-nav-link').forEach(link => {
                     link.addEventListener('click', (e) => {
@@ -377,7 +441,17 @@
                 });
             },
             
-            toggleHamburgerMenu(open) { /* ... */ },
+            toggleHamburgerMenu(open) {
+                 const nav = document.getElementById('hamburger-nav');
+                const overlay = document.getElementById('nav-overlay');
+                if (open) {
+                    nav.classList.remove('translate-x-full');
+                    overlay.classList.add('active');
+                } else {
+                    nav.classList.add('translate-x-full');
+                    overlay.classList.remove('active');
+                }
+            },
 
             navigateTo(contentId) {
                 if (!contentId) return;
@@ -398,9 +472,36 @@
                 if(contentId === 'order-wizard') this.startOrderWizard();
             },
             
-            logout() { /* ... */ },
-            renderUserInfo() { /* ... */ },
-            renderActiveOrders(filter = null) { /* ... */},
+            logout() { 
+                 this.stopBackgroundSync(); 
+                 this.state = { user: null, projects: [], containers: [], orders: [], catalog: [], newOrder: {}, currentWizardStep: 1 }; 
+                 AuthService.clearCredentials(); 
+                 document.getElementById('password-input').value = ''; 
+                 document.getElementById('main-screen').classList.add('hidden'); 
+                 document.getElementById('login-screen').classList.remove('hidden');
+            },
+            renderUserInfo() {
+                 if (this.state.user) {
+                    document.getElementById('user-avatar').src = this.state.user['קישור לאווטאר'] || "https://img.icons8.com/?size=100&id=20750&format=png&color=000000";
+                    document.getElementById('user-greeting').textContent = `שלום, ${this.state.user['שם לקוח']}!`;
+                    document.getElementById('user-phone').textContent = this.state.user['מספר טלפון'];
+                }
+            },
+            renderActiveOrders(filter = null) {
+                 const list = document.getElementById('active-orders-list');
+                list.innerHTML = '';
+                 const ordersToRender = this.state.orders || [];
+                 if (ordersToRender.length === 0) {
+                    list.innerHTML = `<li class="text-center text-gray-500 p-8">אין הזמנות פעילות כרגע.</li>`;
+                    return;
+                }
+                 ordersToRender.forEach(order => {
+                    const item = document.createElement('li');
+                    item.className = `card p-4`;
+                    item.innerHTML = `<div>${order['סוג_פעולה']}</div>`;
+                    list.appendChild(item);
+                });
+            },
             
             async startOrderWizard() {
                 this.state.currentWizardStep = 1;
@@ -416,7 +517,19 @@
                 const wizardContentContainer = document.getElementById('wizard-content');
                 const steps = [ { number: 1, name: "פרטים" }, { number: 2, name: "מיקום והנחיות" }, { number: 3, name: "אישור סופי" } ];
 
-                wizardStepsContainer.innerHTML = steps.map((step, index) => { /* ... */ }).join('');
+                wizardStepsContainer.innerHTML = steps.map((step, index) => {
+                     const isActive = this.state.currentWizardStep >= step.number;
+                    const lineClass = index > 0 && this.state.currentWizardStep > step.number ? 'bg-green-500' : 'bg-gray-300';
+                    return `
+                    <div class="flex-1 text-center ${index > 0 ? 'relative' : ''}">
+                        ${index > 0 ? `<div class="absolute w-full h-1 ${lineClass} top-4 left-0 -translate-x-1/2 -z-10"></div>` : ''}
+                        <div class="w-8 h-8 rounded-full flex items-center justify-center mx-auto mb-1 font-bold ${isActive ? 'bg-green-500 text-white' : 'bg-gray-300 text-gray-600'}">
+                            ${step.number}
+                        </div>
+                        <span class="text-xs">${step.name}</span>
+                    </div>
+                `
+                }).join('');
 
                 switch(this.state.currentWizardStep) {
                     case 1: wizardContentContainer.innerHTML = this.renderWizardStep1(); break;
