@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>מערכת ניהול VIP | ח. סבן</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Rubik', sans-serif; background-color: #f7fafc; }
+        .page { animation: fadeIn 0.5s ease-in-out; }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body class="bg-gray-100">
+
+    <div id="app-container">
+        <!-- Views will be rendered here -->
+    </div>
+
+    <!-- Templates -->
+    <template id="login-view">
+        <div class="page flex items-center justify-center min-h-screen">
+            <div class="w-full max-w-md p-8 space-y-8 bg-white rounded-2xl shadow-lg">
+                <div class="text-center">
+                    <h2 class="mt-6 text-3xl font-extrabold text-gray-900">כניסת מנהלים</h2>
+                    <p class="mt-2 text-sm text-gray-600">מערכת ניהול VIP ח. סבן</p>
+                </div>
+                <div class="mt-8 space-y-6">
+                    <input id="email-input" type="email" placeholder="אימייל" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500">
+                    <input id="password-input" type="password" placeholder="סיסמה" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500">
+                    <button id="login-btn" class="w-full py-3 px-4 text-white bg-green-500 rounded-lg font-semibold hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
+                        כניסה
+                    </button>
+                </div>
+            </div>
+        </div>
+    </template>
+
+    <template id="admin-dashboard-view">
+        <div class="page flex h-screen">
+            <!-- Sidebar -->
+            <aside class="w-64 bg-white shadow-md flex flex-col">
+                <div class="p-6 text-2xl font-bold text-gray-800 border-b">ניהול VIP</div>
+                <nav class="flex-1 p-4 space-y-2">
+                    <a href="#" class="flex items-center px-4 py-2 text-gray-700 bg-gray-200 rounded-lg"><i class="fas fa-tachometer-alt ml-3"></i>דשבורד</a>
+                    <a href="#" class="flex items-center px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg"><i class="fas fa-tasks ml-3"></i>ניהול הזמנות</a>
+                    <a href="#" class="flex items-center px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg"><i class="fas fa-users ml-3"></i>לקוחות</a>
+                </nav>
+            </aside>
+            <!-- Main Content -->
+            <main class="flex-1 p-8 overflow-y-auto">
+                <h1 class="text-3xl font-bold text-gray-800">Mission Control</h1>
+                <p class="text-gray-500 mb-6">ברוך הבא, <span id="admin-name"></span>!</p>
+                <!-- Placeholders for dashboard widgets -->
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <div class="bg-white p-6 rounded-lg shadow">
+                        <h2 class="font-bold text-lg mb-2">הזמנות חדשות (Inbox)</h2>
+                        <p class="text-gray-600">אין הזמנות חדשות כרגע.</p>
+                    </div>
+                    <div class="bg-white p-6 rounded-lg shadow">
+                        <h2 class="font-bold text-lg mb-2">פעילות אחרונה</h2>
+                        <p class="text-gray-600">אין פעילות לקוחות כרגע.</p>
+                    </div>
+                    <div class="bg-white p-6 rounded-lg shadow">
+                        <h2 class="font-bold text-lg mb-2">מכולות בסיכון</h2>
+                         <p class="text-gray-600">אין מכולות בסיכון לחריגה.</p>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </template>
+    
+    <script>
+    const AdminApp = {
+        state: {
+            user: null,
+            currentPage: 'login',
+        },
+        init() {
+            this.render();
+        },
+        api: async function(action, payload = {}) {
+            const SCRIPT_URL = 'YOUR_GOOGLE_APPS_SCRIPT_URL_HERE'; // TODO: Replace with your deployed script URL
+            try {
+                const response = await fetch(`${SCRIPT_URL}?action=${action}`, {
+                    method: 'POST',
+                    mode: 'cors',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                if (!response.ok) throw new Error('Network response was not ok');
+                return await response.json();
+            } catch (error) {
+                console.error('API Error:', error);
+                return null;
+            }
+        },
+        handleLogin() {
+             // In a real app, this would call an authentication function for admins
+             console.log("Admin login attempt");
+             this.state.user = { name: "מנהל" }; // Mock user
+             this.navigateTo('dashboard');
+        },
+        navigateTo(page) {
+            this.state.currentPage = page;
+            this.render();
+        },
+        render() {
+            const container = document.getElementById('app-container');
+            container.innerHTML = '';
+
+            let template;
+            switch (this.state.currentPage) {
+                case 'dashboard':
+                    template = document.getElementById('admin-dashboard-view').content.cloneNode(true);
+                    template.getElementById('admin-name').innerText = this.state.user?.name || '';
+                    break;
+                case 'login':
+                default:
+                    template = document.getElementById('login-view').content.cloneNode(true);
+                    break;
+            }
+            container.appendChild(template);
+            this.addEventListeners();
+        },
+        addEventListeners() {
+            if (this.state.currentPage === 'login') {
+                document.getElementById('login-btn').addEventListener('click', () => this.handleLogin());
+            }
+        }
+    };
+    document.addEventListener('DOMContentLoaded', () => AdminApp.init());
+    </script>
+</body>
+</html>
