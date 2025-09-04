@@ -528,6 +528,46 @@
                     case 1: wizardContentContainer.innerHTML = this.renderWizardStep1(); break;
                     // ... other steps to be added
                 }
+                
+                // Bind events for the newly rendered step content
+                this.bindWizardStepEvents();
+            },
+
+            bindWizardStepEvents() {
+                switch(this.state.currentWizardStep) {
+                    case 1:
+                        this.bindStep1Events();
+                        break;
+                    // Bind events for other steps here
+                }
+            },
+
+            bindStep1Events() {
+                const nextButton = document.getElementById('next-to-step-2');
+                if (nextButton) {
+                    nextButton.addEventListener('click', () => {
+                        this.state.currentWizardStep++;
+                        this.renderWizardStep();
+                    });
+                }
+
+                const actionButtons = document.querySelectorAll('#wizard-content button[data-action]');
+                actionButtons.forEach(btn => {
+                    btn.addEventListener('click', () => {
+                        if (btn.dataset.action === 'חומרים') {
+                            this.navigateTo('digital-store-content');
+                            return;
+                        }
+
+                        actionButtons.forEach(b => b.classList.remove('bg-green-500', 'text-white'));
+                        btn.classList.add('bg-green-500', 'text-white');
+                        this.state.newOrder.actionType = btn.dataset.action;
+                        
+                        if (nextButton) {
+                            nextButton.disabled = false;
+                        }
+                    });
+                });
             },
 
             renderWizardStep1() {
@@ -568,4 +608,5 @@
     </script>
 </body>
 </html>
+
 
