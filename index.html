@@ -54,8 +54,7 @@
             flex-grow: 1;
             display: flex;
             flex-direction: column;
-            overflow-y: auto;
-            -webkit-overflow-scrolling: touch;
+            overflow: hidden; /* Prevent double scrollbars */
         }
         .input {
             border: 1px solid var(--secondary-color);
@@ -74,22 +73,6 @@
             border-radius: 16px;
             padding: 24px;
             box-shadow: 0 4px 12px rgba(0,0,0,0.05);
-        }
-        .tab-btn {
-            flex: 1;
-            padding: 12px;
-            text-align: center;
-            border-radius: 8px;
-            font-weight: 500;
-            transition: all 0.3s ease;
-        }
-        .tab-btn.active {
-            background-color: var(--primary-color);
-            color: white;
-        }
-        .tab-btn:not(.active) {
-            color: var(--primary-color);
-            background-color: transparent;
         }
         .nav-link {
             transition: transform 0.2s ease, box-shadow 0.2s ease;
@@ -127,6 +110,23 @@
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
+        .bottom-nav-link {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            color: #A0AEC0; /* gray-500 */
+            font-size: 0.75rem;
+            flex: 1;
+            padding: 4px 0;
+            transition: color 0.2s ease-in-out;
+        }
+        .bottom-nav-link.active {
+            color: var(--primary-color);
+        }
+        .bottom-nav-link i {
+            font-size: 1.25rem;
+            margin-bottom: 4px;
+        }
     </style>
 </head>
 <body class="bg-gray-100">
@@ -147,9 +147,9 @@
             </div>
         </div>
 
-        <div id="main-screen" class="screen p-4 hidden">
-            <div class="flex items-center justify-between p-2">
-                <button id="hamburger-btn" class="text-2xl text-gray-600">
+        <div id="main-screen" class="screen hidden">
+            <div class="flex items-center justify-between p-2 border-b">
+                <button id="hamburger-btn" class="text-2xl text-gray-600 w-8 h-8">
                     <i class="fas fa-bars"></i>
                 </button>
                 <div class="flex-1 text-center">
@@ -158,151 +158,172 @@
                 <div class="w-8"></div>
             </div>
 
-            <div id="dashboard-content" class="pt-4 space-y-6">
-                <div id="user-info-card" class="card flex items-center p-4">
-                    <img id="user-avatar" class="w-16 h-16 rounded-full ml-4" src="https://img.icons8.com/?size=100&id=20750&format=png&color=000000" alt="User Avatar">
-                    <div>
-                        <h3 id="user-greeting" class="text-xl font-bold"></h3>
-                        <p id="user-phone" class="text-sm text-gray-500"></p>
-                    </div>
-                </div>
-
-                <div id="map-section" class="card p-0 overflow-hidden">
-                    <div class="p-4 border-b">
-                        <h4 class="text-lg font-bold">פרויקטים שלי</h4>
-                        <p class="text-sm text-gray-500">מפה אינטראקטיבית של הפרויקטים הפעילים</p>
-                    </div>
-                    <div class="h-64 bg-gray-200 flex items-center justify-center relative">
-                        <i class="fas fa-map-marked-alt text-4xl text-gray-400"></i>
-                        <p class="absolute bottom-4 text-sm text-gray-500">מפת הפרויקטים תוטמע כאן</p>
-                    </div>
-                </div>
-                
-                <div id="overdue-banner" class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-xl relative hidden" role="alert">
-                    <strong class="font-bold">⚠️ התראה:</strong>
-                    <span class="block sm:inline">קיימות מכולות בסטטוס חורג</span>
-                </div>
-                
-                <div class="card">
-                    <h4 class="text-lg font-bold mb-4">הזמנות פעילות</h4>
-                    <ul id="active-orders-list" class="space-y-4">
-                    </ul>
-                </div>
-            </div>
-            
-            <div id="order-wizard" class="p-4 hidden">
-                <h2 class="text-2xl font-bold text-center mb-6">יצירת הזמנה חדשה</h2>
-                <div id="wizard-steps" class="flex justify-between items-center mb-6">
-                    <div class="flex-1 text-center">
-                        <div class="w-8 h-8 rounded-full flex items-center justify-center mx-auto mb-1 bg-green-500 text-white font-bold">1</div>
-                        <span class="text-xs">פרטים</span>
-                    </div>
-                    <div class="flex-1 text-center relative">
-                        <div class="absolute w-full h-1 bg-gray-300 top-4 left-0 -translate-x-1/2 -z-10"></div>
-                        <div class="w-8 h-8 rounded-full flex items-center justify-center mx-auto mb-1 bg-gray-300 text-gray-600 font-bold">2</div>
-                        <span class="text-xs">מיקום</span>
-                    </div>
-                    <div class="flex-1 text-center relative">
-                        <div class="absolute w-full h-1 bg-gray-300 top-4 left-0 -translate-x-1/2 -z-10"></div>
-                        <div class="w-8 h-8 rounded-full flex items-center justify-center mx-auto mb-1 bg-gray-300 text-gray-600 font-bold">3</div>
-                        <span class="text-xs">אישור</span>
-                    </div>
-                </div>
-
-                <div id="step-1" class="space-y-4">
-                    <div class="bg-gray-100 p-4 rounded-xl">
-                        <h4 class="font-semibold mb-2">פרויקט להזמנה</h4>
-                        <select id="project-select" class="input w-full"></select>
+            <main class="flex-grow overflow-y-auto">
+                 <div id="dashboard-content" class="p-4 pt-4 space-y-6">
+                    <div id="user-info-card" class="card flex items-center p-4">
+                        <img id="user-avatar" class="w-16 h-16 rounded-full ml-4" src="https://img.icons8.com/?size=100&id=20750&format=png&color=000000" alt="User Avatar">
+                        <div>
+                            <h3 id="user-greeting" class="text-xl font-bold"></h3>
+                            <p id="user-phone" class="text-sm text-gray-500"></p>
+                        </div>
                     </div>
 
-                    <div class="bg-gray-100 p-4 rounded-xl">
-                        <h4 class="font-semibold mb-2">סוג פעולה</h4>
-                        <div class="grid grid-cols-2 sm:grid-cols-3 gap-4">
-                            <button class="btn bg-gray-200 text-gray-800 flex flex-col items-center p-4 rounded-xl transition hover:bg-green-500 hover:text-white" data-action="הורדה">
-                                <i class="fas fa-arrow-alt-circle-down text-2xl mb-2"></i>
-                                <span>הורדה</span>
-                            </button>
-                             <button class="btn bg-gray-200 text-gray-800 flex flex-col items-center p-4 rounded-xl transition hover:bg-green-500 hover:text-white" data-action="החלפה">
-                                <i class="fas fa-sync-alt text-2xl mb-2"></i>
-                                <span>החלפה</span>
-                            </button>
-                             <button class="btn bg-gray-200 text-gray-800 flex flex-col items-center p-4 rounded-xl transition hover:bg-green-500 hover:text-white" data-action="העלאה">
-                                <i class="fas fa-arrow-alt-circle-up text-2xl mb-2"></i>
-                                <span>העלאה</span>
-                            </button>
-                             <button class="btn bg-gray-200 text-gray-800 flex flex-col items-center p-4 rounded-xl transition hover:bg-green-500 hover:text-white" data-action="פינוי במקום">
-                                <i class="fas fa-dumpster-fire text-2xl mb-2"></i>
-                                <span>פינוי במקום</span>
-                            </button>
-                             <button class="btn bg-gray-200 text-gray-800 flex flex-col items-center p-4 rounded-xl transition hover:bg-green-500 hover:text-white" data-action="הזזה">
-                                <i class="fas fa-arrows-alt text-2xl mb-2"></i>
-                                <span>הזזה</span>
-                            </button>
-                            <button class="btn bg-gray-200 text-gray-800 flex flex-col items-center p-4 rounded-xl transition hover:bg-green-500 hover:text-white" data-action="חומרים">
-                                <i class="fas fa-hard-hat text-2xl mb-2"></i>
-                                <span>חומרים</span>
-                            </button>
+                    <div id="map-section" class="card p-0 overflow-hidden">
+                        <div class="p-4 border-b">
+                            <h4 class="text-lg font-bold">פרויקטים שלי</h4>
+                            <p class="text-sm text-gray-500">מפה אינטראקטיבית של הפרויקטים הפעילים</p>
+                        </div>
+                        <div class="h-64 bg-gray-200 flex items-center justify-center relative">
+                            <i class="fas fa-map-marked-alt text-4xl text-gray-400"></i>
+                            <p class="absolute bottom-4 text-sm text-gray-500">מפת הפרויקטים תוטמע כאן</p>
                         </div>
                     </div>
                     
-                    <button id="next-to-step-2" class="btn bg-green-600 w-full disabled:bg-gray-400">המשך</button>
-                </div>
-            </div>
-
-            <div id="digital-store-content" class="p-4 hidden">
-                <div id="store-banner" class="rounded-xl mb-4 p-4 text-white text-center" style="background-image: linear-gradient(to right, #4CAF50, #81C784);">
-                    <h3 class="text-xl font-bold mb-2">מבצע החודש!</h3>
-                    <p id="promo-text" class="text-sm"></p>
-                </div>
-                <div class="flex items-center justify-between mb-4">
-                    <h2 class="text-2xl font-bold">חנות דיגיטלית</h2>
-                    <button id="cart-btn" class="relative text-2xl text-gray-600">
-                        <i class="fas fa-shopping-cart"></i>
-                        <span id="cart-count" class="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">0</span>
-                    </button>
-                </div>
-                <div id="materials-grid" class="grid grid-cols-2 gap-4"></div>
-            </div>
-
-            <div id="history-content" class="p-4 hidden">
-                <h2 class="text-2xl font-bold mb-4">דוחות והיסטוריה</h2>
-                <ul id="history-list" class="space-y-4"></ul>
-            </div>
-
-            <div id="faqs-content" class="p-4 hidden">
-                <h2 class="text-2xl font-bold mb-4">שאלות ותשובות</h2>
-                <div id="faqs-accordion" class="space-y-2"></div>
-            </div>
-
-            <div id="chat-content" class="p-4 flex flex-col h-full hidden">
-                <h2 class="text-2xl font-bold mb-4">צ'אט תמיכה</h2>
-                <div id="chat-messages" class="flex-1 overflow-y-auto p-4 bg-gray-100 rounded-xl mb-4"></div>
-                <div class="flex">
-                    <input id="chat-input" type="text" placeholder="הקלד הודעה..." class="flex-1 input rounded-l-xl rounded-r-none">
-                    <button id="send-chat-btn" class="btn bg-green-600 rounded-r-xl rounded-l-none">
-                        <i class="fas fa-paper-plane"></i>
-                    </button>
-                </div>
-            </div>
-
-            <div id="debug-content" class="p-4 hidden">
-                <h2 class="text-2xl font-bold mb-4">כלי ניפוי שגיאות API</h2>
-                <div class="space-y-4">
-                    <div>
-                        <label for="debug-action" class="block text-sm font-medium text-gray-700">פעולה (Action)</label>
-                        <input type="text" id="debug-action" class="input w-full mt-1" value="getUserData">
+                    <div id="overdue-banner" class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-xl relative hidden" role="alert">
+                        <strong class="font-bold">⚠️ התראה:</strong>
+                        <span class="block sm:inline">קיימות מכולות בסטטוס חורג</span>
                     </div>
-                    <div>
-                        <label for="debug-payload" class="block text-sm font-medium text-gray-700">מטען (Payload as JSON)</label>
-                        <textarea id="debug-payload" rows="5" class="input w-full mt-1">{"phone": "508860896", "password": "סבן"}</textarea>
-                    </div>
-                    <button id="debug-send-btn" class="btn bg-blue-600 w-full">שלח בקשה</button>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700">תגובת השרת</label>
-                        <pre id="debug-response" class="bg-gray-800 text-white p-4 rounded-lg mt-1 text-xs overflow-x-auto whitespace-pre-wrap" dir="ltr"></pre>
+                    
+                    <div class="card">
+                        <h4 class="text-lg font-bold mb-4">הזמנות פעילות</h4>
+                        <ul id="active-orders-list" class="space-y-4">
+                        </ul>
                     </div>
                 </div>
-            </div>
+                
+                <div id="order-wizard" class="p-4 hidden">
+                    <h2 class="text-2xl font-bold text-center mb-6">יצירת הזמנה חדשה</h2>
+                    <div id="wizard-steps" class="flex justify-between items-center mb-6">
+                        <div class="flex-1 text-center">
+                            <div class="w-8 h-8 rounded-full flex items-center justify-center mx-auto mb-1 bg-green-500 text-white font-bold">1</div>
+                            <span class="text-xs">פרטים</span>
+                        </div>
+                        <div class="flex-1 text-center relative">
+                            <div class="absolute w-full h-1 bg-gray-300 top-4 left-0 -translate-x-1/2 -z-10"></div>
+                            <div class="w-8 h-8 rounded-full flex items-center justify-center mx-auto mb-1 bg-gray-300 text-gray-600 font-bold">2</div>
+                            <span class="text-xs">מיקום</span>
+                        </div>
+                        <div class="flex-1 text-center relative">
+                            <div class="absolute w-full h-1 bg-gray-300 top-4 left-0 -translate-x-1/2 -z-10"></div>
+                            <div class="w-8 h-8 rounded-full flex items-center justify-center mx-auto mb-1 bg-gray-300 text-gray-600 font-bold">3</div>
+                            <span class="text-xs">אישור</span>
+                        </div>
+                    </div>
+
+                    <div id="step-1" class="space-y-4">
+                        <div class="bg-gray-100 p-4 rounded-xl">
+                            <h4 class="font-semibold mb-2">פרויקט להזמנה</h4>
+                            <select id="project-select" class="input w-full"></select>
+                        </div>
+
+                        <div class="bg-gray-100 p-4 rounded-xl">
+                            <h4 class="font-semibold mb-2">סוג פעולה</h4>
+                            <div class="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                                <button class="btn bg-gray-200 text-gray-800 flex flex-col items-center p-4 rounded-xl transition hover:bg-green-500 hover:text-white" data-action="הורדה">
+                                    <i class="fas fa-arrow-alt-circle-down text-2xl mb-2"></i>
+                                    <span>הורדה</span>
+                                </button>
+                                 <button class="btn bg-gray-200 text-gray-800 flex flex-col items-center p-4 rounded-xl transition hover:bg-green-500 hover:text-white" data-action="החלפה">
+                                    <i class="fas fa-sync-alt text-2xl mb-2"></i>
+                                    <span>החלפה</span>
+                                </button>
+                                 <button class="btn bg-gray-200 text-gray-800 flex flex-col items-center p-4 rounded-xl transition hover:bg-green-500 hover:text-white" data-action="העלאה">
+                                    <i class="fas fa-arrow-alt-circle-up text-2xl mb-2"></i>
+                                    <span>העלאה</span>
+                                </button>
+                                 <button class="btn bg-gray-200 text-gray-800 flex flex-col items-center p-4 rounded-xl transition hover:bg-green-500 hover:text-white" data-action="פינוי במקום">
+                                    <i class="fas fa-dumpster-fire text-2xl mb-2"></i>
+                                    <span>פינוי במקום</span>
+                                </button>
+                                 <button class="btn bg-gray-200 text-gray-800 flex flex-col items-center p-4 rounded-xl transition hover:bg-green-500 hover:text-white" data-action="הזזה">
+                                    <i class="fas fa-arrows-alt text-2xl mb-2"></i>
+                                    <span>הזזה</span>
+                                </button>
+                                <button class="btn bg-gray-200 text-gray-800 flex flex-col items-center p-4 rounded-xl transition hover:bg-green-500 hover:text-white" data-action="חומרים">
+                                    <i class="fas fa-hard-hat text-2xl mb-2"></i>
+                                    <span>חומרים</span>
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <button id="next-to-step-2" class="btn bg-green-600 w-full disabled:bg-gray-400">המשך</button>
+                    </div>
+                </div>
+
+                <div id="digital-store-content" class="p-4 hidden">
+                    <div id="store-banner" class="rounded-xl mb-4 p-4 text-white text-center" style="background-image: linear-gradient(to right, #4CAF50, #81C784);">
+                        <h3 class="text-xl font-bold mb-2">מבצע החודש!</h3>
+                        <p id="promo-text" class="text-sm"></p>
+                    </div>
+                    <div class="flex items-center justify-between mb-4">
+                        <h2 class="text-2xl font-bold">חנות דיגיטלית</h2>
+                        <button id="cart-btn" class="relative text-2xl text-gray-600">
+                            <i class="fas fa-shopping-cart"></i>
+                            <span id="cart-count" class="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">0</span>
+                        </button>
+                    </div>
+                    <div id="materials-grid" class="grid grid-cols-2 gap-4"></div>
+                </div>
+
+                <div id="history-content" class="p-4 hidden">
+                    <h2 class="text-2xl font-bold mb-4">דוחות והיסטוריה</h2>
+                    <ul id="history-list" class="space-y-4"></ul>
+                </div>
+
+                <div id="faqs-content" class="p-4 hidden">
+                    <h2 class="text-2xl font-bold mb-4">שאלות ותשובות</h2>
+                    <div id="faqs-accordion" class="space-y-2"></div>
+                </div>
+
+                <div id="chat-content" class="p-4 flex flex-col h-full hidden">
+                    <h2 class="text-2xl font-bold mb-4">צ'אט תמיכה</h2>
+                    <div id="chat-messages" class="flex-1 overflow-y-auto p-4 bg-gray-100 rounded-xl mb-4"></div>
+                    <div class="flex">
+                        <input id="chat-input" type="text" placeholder="הקלד הודעה..." class="flex-1 input rounded-l-xl rounded-r-none">
+                        <button id="send-chat-btn" class="btn bg-green-600 rounded-r-xl rounded-l-none">
+                            <i class="fas fa-paper-plane"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div id="debug-content" class="p-4 hidden">
+                    <h2 class="text-2xl font-bold mb-4">כלי ניפוי שגיאות API</h2>
+                    <div class="space-y-4">
+                        <div>
+                            <label for="debug-action" class="block text-sm font-medium text-gray-700">פעולה (Action)</label>
+                            <input type="text" id="debug-action" class="input w-full mt-1" value="getUserData">
+                        </div>
+                        <div>
+                            <label for="debug-payload" class="block text-sm font-medium text-gray-700">מטען (Payload as JSON)</label>
+                            <textarea id="debug-payload" rows="5" class="input w-full mt-1">{"phone": "508860896", "password": "סבן"}</textarea>
+                        </div>
+                        <button id="debug-send-btn" class="btn bg-blue-600 w-full">שלח בקשה</button>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">תגובת השרת</label>
+                            <pre id="debug-response" class="bg-gray-800 text-white p-4 rounded-lg mt-1 text-xs overflow-x-auto whitespace-pre-wrap" dir="ltr"></pre>
+                        </div>
+                    </div>
+                </div>
+            </main>
+
+            <footer id="bottom-nav" class="w-full bg-white border-t border-gray-200 flex justify-around">
+                <a href="#" class="bottom-nav-link active" data-target="dashboard-content">
+                    <i class="fas fa-tachometer-alt"></i>
+                    <span>דאשבורד</span>
+                </a>
+                <a href="#" class="bottom-nav-link" data-target="order-wizard">
+                    <i class="fas fa-plus-circle"></i>
+                    <span>הזמנה</span>
+                </a>
+                <a href="#" class="bottom-nav-link" data-target="digital-store-content">
+                    <i class="fas fa-store-alt"></i>
+                    <span>חנות</span>
+                </a>
+                <a href="#" class="bottom-nav-link" data-target="history-content">
+                    <i class="fas fa-history"></i>
+                    <span>היסטוריה</span>
+                </a>
+            </footer>
 
             <div id="cart-modal" class="hidden fixed inset-0 z-50 overflow-auto bg-gray-800 bg-opacity-75 flex">
                 <div class="relative p-6 bg-white w-full max-w-sm m-auto flex flex-col rounded-xl max-h-[90vh]">
@@ -342,10 +363,6 @@
         dayjs.locale('he');
         dayjs.extend(dayjs_plugin_relativeTime);
 
-        /**
-         * כלי עזר לרישום הודעות לקונסול עם חותמת זמן ורמות שונות.
-         * עוזר בניפוי שגיאות על ידי מעקב אחר זרימת האפליקציה.
-         */
         const Logger = {
             _log(level, color, message, data = '') {
                 console[level](`%c[${new Date().toISOString()}] ${level.toUpperCase()}:`, `color: ${color}; font-weight: bold;`, message, data);
@@ -355,15 +372,9 @@
             error(message, data) { this._log('error', 'red', message, data); }
         };
 
-        /**
-         * כלי עזר לניהול פרטי ההתחברות של המשתמש.
-         * שומר וטוען את מספר הטלפון והסיסמה מהאחסון המקומי של הדפדפן.
-         */
         const AuthService = {
             saveCredentials(phone, password) {
                 localStorage.setItem('last_phone', phone);
-                // אזהרת אבטחה: שמירת סיסמה ב-localStorage אינה מומלצת בסביבת פרודקשן.
-                // localStorage.setItem('last_password', password); 
             },
             getPhone() {
                 return localStorage.getItem('last_phone') || '';
@@ -373,7 +384,6 @@
             },
             clearCredentials() {
                 localStorage.removeItem('last_phone');
-                // localStorage.removeItem('last_password');
             }
         };
 
@@ -442,7 +452,7 @@
                     return data;
                 } catch (error) {
                     Logger.error(`API Call Failed: ${action}`, error);
-                    throw error; // זורק את השגיאה הלאה כדי שהפונקציה שקראה תטפל בה
+                    throw error;
                 }
             },
 
@@ -466,7 +476,6 @@
                         this.renderUserInfo();
                         this.renderActiveOrders();
 
-                        // Fix: Hide login screen and show main screen after successful login
                         document.getElementById('login-screen').classList.add('hidden');
                         document.getElementById('main-screen').classList.remove('hidden');
                         this.navigateTo('dashboard-content');
@@ -486,8 +495,6 @@
                                     break;
                             }
                         } else if (data && data.success === true) {
-                            // This case handles a successful response that is missing user data and a reason.
-                            // It almost always means the server-side script is not the latest version.
                             errorTitle = 'שגיאת תצורה בשרת';
                             errorMessage = 'השרת ענה אך לא סיפק את המידע הנדרש. ייתכן שנדרש פרסום מחדש (Deploy) של קוד השרת.';
                         }
@@ -513,9 +520,8 @@
             },
 
             async fetchContainerStatus() {
-                // This function might need to be adapted to use POST if the server requires it
                 const phone = this.state.user['מספר טלפון'];
-                const data = await this.api('getContainers', { phone: phone }); // Assuming this action exists and accepts POST
+                const data = await this.api('getContainers', { phone: phone });
                 if (data) {
                     this.state.containers = data.containers;
                     this.renderMap();
@@ -524,14 +530,14 @@
             },
 
             startBackgroundSync() {
-                this.stopBackgroundSync(); // Clear any existing interval
+                this.stopBackgroundSync();
                 Logger.info('Starting background data sync every 5 minutes.');
                 this.backgroundSyncInterval = setInterval(async () => {
                     Logger.info('Performing background data sync...');
                     try {
                         const data = await this.api('getUserData', { 
                             phone: this.state.user['מספר טלפון'], 
-                            password: AuthService.getPassword() // Re-authentication might be needed
+                            password: AuthService.getPassword()
                         });
                         if (data && data.user) {
                             this.state.projects = data.projects;
@@ -545,9 +551,8 @@
 
                     } catch (error) {
                         Logger.error('Background sync failed', error);
-                        // Optional: notify user that sync failed
                     }
-                }, 300000); // 5 minutes
+                }, 300000);
             },
 
             stopBackgroundSync() {
@@ -575,6 +580,16 @@
                              this.navigateTo(target);
                         }
                         this.toggleHamburgerMenu();
+                    });
+                });
+                
+                document.querySelectorAll('#bottom-nav .bottom-nav-link').forEach(link => {
+                    link.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        const target = e.currentTarget.dataset.target;
+                        if (target) {
+                            this.navigateTo(target);
+                        }
                     });
                 });
 
@@ -608,32 +623,33 @@
             toggleHamburgerMenu() {
                 const nav = document.getElementById('hamburger-nav');
                 const overlay = document.getElementById('nav-overlay');
-                // Using a more direct class toggle for transform
                 nav.classList.toggle('translate-x-full');
                 overlay.classList.toggle('active');
             },
 
             navigateTo(contentId) {
-                // Hide all main content divs
-                document.querySelectorAll('#main-screen > div').forEach(div => {
+                document.querySelectorAll('#main-screen > main > div').forEach(div => {
                     if(div.id !== 'cart-modal') div.classList.add('hidden');
                 });
                 
-                // Show the target content div
                 const targetContent = document.getElementById(contentId);
                 if(targetContent) {
                     targetContent.classList.remove('hidden');
                 } else {
-                    // Default to dashboard if target not found
                     document.getElementById('dashboard-content').classList.remove('hidden');
                 }
 
-                // Special handling for initial main screen navigation
                 if (contentId === 'main-screen') {
                      document.getElementById('dashboard-content').classList.remove('hidden');
                 }
                 
-                // Specific loading functions for each view
+                document.querySelectorAll('#bottom-nav .bottom-nav-link').forEach(link => {
+                    link.classList.remove('active');
+                    if (link.dataset.target === contentId) {
+                        link.classList.add('active');
+                    }
+                });
+
                 switch(contentId) {
                     case 'order-wizard': this.renderProjectsForOrder(); break;
                     case 'digital-store-content': this.fetchCatalog(); break;
@@ -650,8 +666,7 @@
                 this.state.orders = [];
                 AuthService.clearCredentials();
                 document.getElementById('password-input').value = '';
-                this.navigateTo('login-screen');
-                // Hide the main screen and show login screen
+                
                 document.getElementById('main-screen').classList.add('hidden');
                 document.getElementById('login-screen').classList.remove('hidden');
 
@@ -688,9 +703,9 @@
 
             renderActiveOrders() {
                 const list = document.getElementById('active-orders-list');
-                list.innerHTML = ''; // Clear list before rendering
+                list.innerHTML = '';
                 if (!this.state.orders || this.state.orders.length === 0) {
-                    list.innerHTML = '<li class="text-center text-gray-500">אין הזמנות פעילות כרגע.</li>';
+                    list.innerHTML = '<li class="text-center text-gray-500 p-8">אין הזמנות פעילות כרגע.</li>';
                     return;
                 }
                 this.state.orders.forEach(order => {
@@ -737,13 +752,12 @@
 
             async fetchCatalog() {
                  try {
-                     const data = await this.api('getCatalog'); // Assuming getCatalog needs no payload
+                     const data = await this.api('getCatalog');
                      if (data && data.catalog) {
                          this.state.catalog = data.catalog;
                          this.renderCatalog();
                      }
                  } catch (error) {
-                     // Handle error, maybe show a message to the user
                      Logger.error('Failed to fetch catalog', error);
                  }
             },
@@ -773,7 +787,6 @@
             },
             
             fetchChatMessages() {
-                // Fetch chat messages and render them
                 // This would need to be converted to use the `api` function with POST
             },
             
@@ -796,7 +809,4 @@
     </script>
 </body>
 </html>
-
-
-
 
