@@ -387,8 +387,9 @@
 
                     if (!response.ok) { throw new Error(`שגיאת רשת: ${response.status} ${response.statusText}`); }
                     
-                    const data = await response.json();
-                    Logger.info(`API Call Succeeded: ${action}`, data);
+                    const textResponse = await response.text();
+                    Logger.info(`API Raw Response: ${textResponse}`);
+                    const data = JSON.parse(textResponse);
                     
                     if (!data.success) { throw new Error(data.error || 'השרת החזיר שגיאה לא ידועה'); }
                     
@@ -565,7 +566,7 @@
                     const lineClass = index > 0 && this.state.currentWizardStep > step.number ? 'bg-green-500' : 'bg-gray-300';
                     return `
                     <div class="flex-1 text-center ${index > 0 ? 'relative' : ''}">
-                        ${index > 0 ? `<div class="absolute w-full h-1 ${lineClass} top-4 left-0 -translate-x-1/2 -z-10"></div>` : ''}
+                        ${index > 0 ? `<div class="absolute w-full h-1 ${lineClass} top-4 left-0 -translate-x-1.5/2 -z-10"></div>` : ''}
                         <div class="w-8 h-8 rounded-full flex items-center justify-center mx-auto mb-1 font-bold ${isActive ? 'bg-green-500 text-white' : 'bg-gray-300 text-gray-600'}">
                             ${step.number}
                         </div>
@@ -823,7 +824,11 @@
                 const submitBtn = document.getElementById('wizard-submit-btn');
                 this.showLoading(submitBtn);
                 try {
-                    const response = await this.api('createOrder', this.state.newOrder);
+                    const orderPayload = {
+                        ...this.state.newOrder,
+                        userPhone: this.state.user['מספר טלפון']
+                    };
+                    const response = await this.api('createOrder', orderPayload);
                     if (response.success) {
                         this.renderOrderSuccess(response.orderId);
                         this.navigateTo('order-success-content');
