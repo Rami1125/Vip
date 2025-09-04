@@ -1,0 +1,571 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>מערכת VIP ח. סבן - שדרוג</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/dayjs/1.11.10/dayjs.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/dayjs/1.11.10/locale/he.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/dayjs/1.11.10/plugin/relativeTime.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.5.1/chart.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #1F9D55;
+            --secondary-color: #E2E8F0;
+            --dark-bg: #1A202C;
+            --light-bg: #F7FAFC;
+        }
+        html, body {
+            height: 100%;
+            overflow: hidden;
+        }
+        body {
+            font-family: 'Rubik', sans-serif;
+            background-color: var(--light-bg);
+            direction: rtl;
+        }
+        .container-frame {
+            position: relative;
+            max-width: 450px;
+            height: 95vh;
+            margin: 2.5vh auto;
+            border: 10px solid #1A202C; /* Samsung-like dark gray */
+            border-radius: 40px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3), inset 0 0 1px 1px rgba(255,255,255,0.1);
+            background-color: white;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+        .container-frame:before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100px;
+            height: 8px;
+            background-color: #1A202C;
+            border-bottom-left-radius: 10px;
+            border-bottom-right-radius: 10px;
+            z-index: 10;
+        }
+        .screen {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden; /* Prevent double scrollbars */
+        }
+        .input {
+            border: 1px solid var(--secondary-color);
+            padding: 12px;
+            border-radius: 12px;
+            background-color: white;
+        }
+        .btn {
+            padding: 12px;
+            border-radius: 12px;
+            color: white;
+            text-align: center;
+        }
+        .card {
+            background-color: white;
+            border-radius: 16px;
+            padding: 24px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+            position: relative;
+            overflow: hidden;
+        }
+        .nav-link {
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        .nav-link:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        .overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.5); z-index: 40;
+            opacity: 0; visibility: hidden; transition: opacity 0.3s ease;
+        }
+        .overlay.active { opacity: 1; visibility: visible; }
+        
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        
+        .bottom-nav-link {
+            display: flex; flex-direction: column; align-items: center;
+            color: #A0AEC0; font-size: 0.75rem; flex: 1;
+            padding: 4px 0; transition: color 0.2s ease-in-out;
+        }
+        .bottom-nav-link.active { color: var(--primary-color); }
+        .bottom-nav-link i { font-size: 1.25rem; margin-bottom: 4px; }
+
+        .order-card.overdue {
+            background-color: #FFF5F5; /* red-50 */
+            animation: pulse-red 2s infinite;
+        }
+        @keyframes pulse-red {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); }
+            70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); }
+        }
+        .order-status-bar {
+            position: absolute;
+            right: 0; top: 0; bottom: 0;
+            width: 6px;
+        }
+        .status-green { background-color: #34D399; } /* green-400 */
+        .status-yellow { background-color: #FBBF24; } /* yellow-400 */
+        .status-blue { background-color: #60A5FA; } /* blue-400 */
+    </style>
+</head>
+<body class="bg-gray-800">
+
+    <div class="container-frame">
+        <div id="login-screen" class="screen p-6 flex flex-col items-center justify-center">
+             <div class="text-center mb-8">
+                <div class="flex items-center justify-center mb-4">
+                    <img src="https://img.icons8.com/?size=100&id=20750&format=png&color=000000" alt="H. Saban Logo" class="w-24 h-24 rounded-full">
+                </div>
+                <h1 class="text-3xl font-bold text-gray-800">ברוכים הבאים</h1>
+                <p class="text-gray-500">אנא הזן את פרטיך כדי להתחבר</p>
+            </div>
+            <div class="w-full space-y-4">
+                <input id="phone-input" type="text" placeholder="מספר טלפון" class="input w-full text-right" value="508860896">
+                <input id="password-input" type="password" placeholder="סיסמה" class="input w-full text-right" value="סבן">
+                <button id="login-btn" class="btn bg-green-600 w-full hover:bg-green-700 transition">התחבר למערכת</button>
+            </div>
+        </div>
+
+        <div id="main-screen" class="screen hidden">
+            <div class="flex items-center justify-between p-2 border-b">
+                <button id="hamburger-btn" class="text-2xl text-gray-600 w-8 h-8">
+                    <i class="fas fa-bars"></i>
+                </button>
+                <div class="flex-1 text-center">
+                    <img src="https://img.icons8.com/?size=100&id=20750&format=png&color=000000" alt="H. Saban Logo" class="w-10 h-10 mx-auto rounded-full">
+                </div>
+                <div class="w-8"></div>
+            </div>
+
+            <main class="flex-grow overflow-y-auto">
+                 <div id="dashboard-content" class="p-4 pt-4 space-y-6">
+                    <div id="user-info-card" class="card flex items-center p-4">
+                        <img id="user-avatar" class="w-16 h-16 rounded-full ml-4" src="https://img.icons8.com/?size=100&id=20750&format=png&color=000000" alt="User Avatar">
+                        <div>
+                            <h3 id="user-greeting" class="text-xl font-bold"></h3>
+                            <p id="user-phone" class="text-sm text-gray-500"></p>
+                        </div>
+                    </div>
+
+                    <div id="map-section" class="card p-0 overflow-hidden">
+                        <div class="p-4 border-b">
+                            <h4 class="text-lg font-bold">פרויקטים שלי</h4>
+                            <p class="text-sm text-gray-500">מפה אינטראקטיבית של הפרויקטים הפעילים</p>
+                        </div>
+                        <div class="h-64 bg-gray-200 flex items-center justify-center relative">
+                            <i class="fas fa-map-marked-alt text-4xl text-gray-400"></i>
+                            <p class="absolute bottom-4 text-sm text-gray-500">מפת הפרויקטים תוטמע כאן</p>
+                        </div>
+                    </div>
+                    
+                    <div id="overdue-banner" class="bg-red-500 border border-red-700 text-white px-4 py-3 rounded-xl relative hidden cursor-pointer" role="alert">
+                        <strong class="font-bold">⚠️ התראה:</strong>
+                        <span class="block sm:inline">קיימות מכולות בסטטוס חורג. לחץ לסינון.</span>
+                    </div>
+                    
+                    <div class="card">
+                        <h4 class="text-lg font-bold mb-4">הזמנות פעילות</h4>
+                        <ul id="active-orders-list" class="space-y-4">
+                        </ul>
+                    </div>
+                </div>
+                
+                 <div id="order-wizard" class="p-4 hidden">
+                    <h2 class="text-2xl font-bold text-center mb-6">יצירת הזמנה חדשה</h2>
+                    <div id="wizard-steps" class="flex justify-between items-center mb-6">
+                         <!-- Wizard steps will be dynamically generated here -->
+                    </div>
+                    <div id="wizard-content">
+                         <!-- Wizard step content will be injected here -->
+                    </div>
+                </div>
+
+                <div id="digital-store-content" class="p-4 hidden">
+                     <div id="store-banner" class="rounded-xl mb-4 p-4 text-white text-center bg-gradient-to-r from-green-500 to-green-400">
+                        <h3 class="text-xl font-bold mb-2">מבצע החודש!</h3>
+                        <p id="promo-text" class="text-sm"></p>
+                    </div>
+                    <div class="flex items-center justify-between mb-4">
+                        <h2 class="text-2xl font-bold">חנות דיגיטלית</h2>
+                        <button id="cart-btn" class="relative text-2xl text-gray-600">
+                            <i class="fas fa-shopping-cart"></i>
+                            <span id="cart-count" class="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">0</span>
+                        </button>
+                    </div>
+                    <div id="materials-grid" class="grid grid-cols-2 gap-4"></div>
+                </div>
+
+                <div id="history-content" class="p-4 hidden">
+                    <h2 class="text-2xl font-bold mb-4">דוחות והיסטוריה</h2>
+                    <ul id="history-list" class="space-y-4"></ul>
+                </div>
+
+                <div id="faqs-content" class="p-4 hidden">
+                    <h2 class="text-2xl font-bold mb-4">שאלות ותשובות</h2>
+                    <div id="faqs-accordion" class="space-y-2"></div>
+                </div>
+
+                <div id="chat-content" class="p-4 flex flex-col h-full hidden">
+                    <h2 class="text-2xl font-bold mb-4">צ'אט תמיכה</h2>
+                    <div id="chat-messages" class="flex-1 overflow-y-auto p-4 bg-gray-100 rounded-xl mb-4"></div>
+                    <div class="flex">
+                        <input id="chat-input" type="text" placeholder="הקלד הודעה..." class="flex-1 input rounded-l-xl rounded-r-none">
+                        <button id="send-chat-btn" class="btn bg-green-600 rounded-r-xl rounded-l-none">
+                            <i class="fas fa-paper-plane"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div id="debug-content" class="p-4 hidden">
+                    <h2 class="text-2xl font-bold mb-4">כלי ניפוי שגיאות API</h2>
+                    <div class="space-y-4">
+                        <div>
+                            <label for="debug-action" class="block text-sm font-medium text-gray-700">פעולה (Action)</label>
+                            <input type="text" id="debug-action" class="input w-full mt-1" value="getUserData">
+                        </div>
+                        <div>
+                            <label for="debug-payload" class="block text-sm font-medium text-gray-700">מטען (Payload as JSON)</label>
+                            <textarea id="debug-payload" rows="5" class="input w-full mt-1">{"phone": "508860896", "password": "סבן"}</textarea>
+                        </div>
+                        <button id="debug-send-btn" class="btn bg-blue-600 w-full">שלח בקשה</button>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">תגובת השרת</label>
+                            <pre id="debug-response" class="bg-gray-800 text-white p-4 rounded-lg mt-1 text-xs overflow-x-auto whitespace-pre-wrap" dir="ltr"></pre>
+                        </div>
+                    </div>
+                </div>
+            </main>
+
+            <footer id="bottom-nav" class="w-full bg-white border-t border-gray-200 flex justify-around">
+                <a href="#" class="bottom-nav-link active" data-target="dashboard-content">
+                    <i class="fas fa-tachometer-alt"></i>
+                    <span>דאשבורד</span>
+                </a>
+                <a href="#" class="bottom-nav-link" data-target="order-wizard">
+                    <i class="fas fa-plus-circle"></i>
+                    <span>הזמנה</span>
+                </a>
+                <a href="#" class="bottom-nav-link" data-target="digital-store-content">
+                    <i class="fas fa-store-alt"></i>
+                    <span>חנות</span>
+                </a>
+                <a href="#" class="bottom-nav-link" data-target="history-content">
+                    <i class="fas fa-history"></i>
+                    <span>היסטוריה</span>
+                </a>
+            </footer>
+        </div>
+
+        <nav id="hamburger-nav" class="fixed top-0 right-0 w-64 h-full bg-white shadow-xl p-6 z-50 transform translate-x-full transition-transform duration-300 ease-in-out">
+            <div class="flex justify-between items-center mb-8">
+                <h3 class="text-xl font-bold">תפריט</h3>
+                <button id="close-hamburger-btn" class="text-2xl text-gray-600">&times;</button>
+            </div>
+            <ul class="space-y-4">
+                <li><a href="#" class="nav-link block p-3 rounded-xl hover:bg-gray-100 text-gray-800" data-target="dashboard-content"><i class="fas fa-tachometer-alt ml-2"></i>דאשבורד</a></li>
+                <li><a href="#" class="nav-link block p-3 rounded-xl hover:bg-gray-100 text-gray-800" data-target="order-wizard"><i class="fas fa-plus-circle ml-2"></i>הזמנה חדשה</a></li>
+                <li><a href="#" class="nav-link block p-3 rounded-xl hover:bg-gray-100 text-gray-800" data-target="digital-store-content"><i class="fas fa-store-alt ml-2"></i>חנות דיגיטלית</a></li>
+                <li><a href="#" class="nav-link block p-3 rounded-xl hover:bg-gray-100 text-gray-800" data-target="history-content"><i class="fas fa-history ml-2"></i>דוחות והיסטוריה</a></li>
+                <li><a href="#" class="nav-link block p-3 rounded-xl hover:bg-gray-100 text-gray-800" data-target="faqs-content"><i class="fas fa-question-circle ml-2"></i>שאלות ותשובות</a></li>
+                <li><a href="#" class="nav-link block p-3 rounded-xl hover:bg-gray-100 text-gray-800" data-target="chat-content"><i class="fas fa-comments ml-2"></i>צ'אט</a></li>
+                <hr/>
+                <li><a href="#" class="nav-link block p-3 rounded-xl hover:bg-gray-100 text-blue-600" data-target="debug-content"><i class="fas fa-bug ml-2"></i>ניפוי שגיאות</a></li>
+                <hr/>
+                <li><a href="#" id="logout-btn" class="nav-link block p-3 rounded-xl hover:bg-gray-100 text-red-500"><i class="fas fa-sign-out-alt ml-2"></i>התנתק</a></li>
+            </ul>
+        </nav>
+        <div id="nav-overlay" class="overlay"></div>
+    </div>
+
+    <script>
+        dayjs.locale('he');
+        dayjs.extend(dayjs_plugin_relativeTime);
+
+        // ... Logger and AuthService objects remain the same ...
+        const Logger = { _log(level, color, message, data = '') { console[level](`%c[${new Date().toISOString()}] ${level.toUpperCase()}:`, `color: ${color}; font-weight: bold;`, message, data); }, info(message, data) { this._log('info', 'blue', message, data); }, warn(message, data) { this._log('warn', 'orange', message, data); }, error(message, data) { this._log('error', 'red', message, data); } };
+        const AuthService = { saveCredentials(phone, password) { localStorage.setItem('last_phone', phone); }, getPhone() { return localStorage.getItem('last_phone') || ''; }, getPassword() { return document.getElementById('password-input').value; }, clearCredentials() { localStorage.removeItem('last_phone'); } };
+
+
+        const App = {
+            state: {
+                user: null, projects: [], containers: [], orders: [],
+                catalog: [], newOrder: {}, currentWizardStep: 1,
+            },
+            
+            API_URL: 'https://script.google.com/macros/s/AKfycbwVx10n61lVBHHp8Icsp-7oNUOiq2w5yL72Mg8ZdV8cZ5IcSyk1wB_4WmkLAwZUALY/exec',
+            backgroundSyncInterval: null,
+
+            init() {
+                Logger.info('App Initializing...');
+                this.bindEvents();
+                this.navigateTo('login-screen');
+                document.getElementById('phone-input').value = AuthService.getPhone();
+                Logger.info('App Initialized successfully.');
+            },
+            
+            showLoading(btn) { btn.disabled = true; btn.innerHTML = `<i class="fas fa-spinner fa-spin ml-2"></i> טוען...`; },
+            hideLoading(btn, text) { btn.disabled = false; btn.innerHTML = text; },
+
+            async api(action, payload = {}) {
+                // ... same robust api function ...
+                try { const url = new URL(this.API_URL); url.searchParams.append('action', action); Logger.info(`API Call Started: ${action}`, payload); const response = await fetch(url.toString(), { method: 'POST', mode: 'cors', credentials: 'omit', redirect: 'follow', body: JSON.stringify(payload), }); if (!response.ok) { throw new Error(`שגיאת רשת: ${response.status} ${response.statusText}`); } const data = await response.json(); Logger.info(`API Call Succeeded: ${action}`, data); if (!data.success) { throw new Error(data.error || 'השרת החזיר שגיאה לא ידועה'); } return data; } catch (error) { Logger.error(`API Call Failed: ${action}`, error); throw error; }
+            },
+
+            async login() {
+                const phone = AuthService.getPhone();
+                const password = AuthService.getPassword();
+                const loginBtn = document.getElementById('login-btn');
+
+                this.showLoading(loginBtn);
+                try {
+                    Logger.info(`Login attempt for phone: ${phone}`);
+                    const data = await this.api('getUserData', { phone: phone, password: password });
+
+                    if (data && data.user) {
+                        this.state = { ...this.state, ...data };
+                        AuthService.saveCredentials(phone, password);
+                        
+                        this.startBackgroundSync();
+                        this.renderUserInfo();
+                        this.renderActiveOrders();
+
+                        document.getElementById('login-screen').classList.add('hidden');
+                        document.getElementById('main-screen').classList.remove('hidden');
+                        this.navigateTo('dashboard-content');
+
+                    } else {
+                        // ... Same error handling ...
+                         Logger.warn('Login failed: Server response did not contain a user object.', data); let errorMessage = 'פרטי התחברות שגויים או שהמשתמש אינו קיים.'; let errorTitle = 'שגיאת התחברות'; if (data && data.reason) { switch (data.reason) { case 'USER_NOT_FOUND': errorMessage = 'מספר הטלפון שהוזן אינו קיים במערכת.'; break; case 'PASSWORD_MISMATCH': errorMessage = 'הסיסמה שהוזנה אינה נכונה.'; break; } } else if (data && data.success === true) { errorTitle = 'שגיאת תצורה בשרת'; errorMessage = 'השרת ענה אך לא סיפק את המידע הנדרש. ייתכן שנדרש פרסום מחדש (Deploy) של קוד השרת.'; } Swal.fire({ icon: 'error', title: errorTitle, text: errorMessage, confirmButtonText: 'אישור' });
+                    }
+                } catch (error) {
+                    // ... Same error handling ...
+                    Logger.error('API Call Failed: getUserData', error); Swal.fire({ icon: 'error', title: 'שגיאת תקשורת', text: `אירעה שגיאה: ${error.message}`, confirmButtonText: 'אישור' });
+                } finally {
+                    this.hideLoading(loginBtn, 'התחבר למערכת');
+                }
+            },
+
+            async fetchContainerStatus() { /* ... */ },
+            startBackgroundSync() { /* ... */ },
+            stopBackgroundSync() { /* ... */ },
+
+            bindEvents() {
+                // Main Events
+                document.getElementById('login-btn').addEventListener('click', () => this.login());
+                document.getElementById('phone-input').addEventListener('input', (e) => localStorage.setItem('last_phone', e.target.value));
+                document.getElementById('logout-btn').addEventListener('click', () => this.logout());
+
+                // Navigation Events
+                document.getElementById('hamburger-btn').addEventListener('click', () => this.toggleHamburgerMenu(true));
+                document.getElementById('close-hamburger-btn').addEventListener('click', () => this.toggleHamburgerMenu(false));
+                document.getElementById('nav-overlay').addEventListener('click', () => this.toggleHamburgerMenu(false));
+
+                document.querySelectorAll('#hamburger-nav .nav-link, #bottom-nav .bottom-nav-link').forEach(link => {
+                    link.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        const target = e.currentTarget.dataset.target;
+                        if (target) this.navigateTo(target);
+                        this.toggleHamburgerMenu(false); // Close menu on navigation
+                    });
+                });
+
+                // Debug Tool Events
+                document.getElementById('debug-send-btn').addEventListener('click', async () => { /* ... */ });
+                
+                // Banner Event
+                document.getElementById('overdue-banner').addEventListener('click', () => this.filterOverdueOrders());
+            },
+            
+            toggleHamburgerMenu(open) {
+                const nav = document.getElementById('hamburger-nav');
+                const overlay = document.getElementById('nav-overlay');
+                if (open) {
+                    nav.classList.remove('translate-x-full');
+                    overlay.classList.add('active');
+                } else {
+                    nav.classList.add('translate-x-full');
+                    overlay.classList.remove('active');
+                }
+            },
+
+            navigateTo(contentId) {
+                if (!contentId) return;
+                
+                document.querySelectorAll('#main-screen > main > div').forEach(div => div.classList.add('hidden'));
+                
+                const targetContent = document.getElementById(contentId);
+                if(targetContent) {
+                    targetContent.classList.remove('hidden');
+                } else { // Fallback to dashboard
+                    document.getElementById('dashboard-content').classList.remove('hidden');
+                    contentId = 'dashboard-content';
+                }
+                
+                document.querySelectorAll('#bottom-nav .bottom-nav-link').forEach(link => {
+                    link.classList.toggle('active', link.dataset.target === contentId);
+                });
+
+                // Trigger content-specific rendering
+                switch(contentId) {
+                    case 'order-wizard': this.startOrderWizard(); break;
+                    case 'digital-store-content': this.fetchCatalog(); break;
+                    case 'history-content': this.renderOrderHistory(); break;
+                    case 'faqs-content': this.renderFAQs(); break;
+                }
+            },
+            
+            logout() {
+                // ... same logout logic ...
+                 this.stopBackgroundSync(); this.state = { user: null, projects: [], containers: [], orders: [], catalog: [], newOrder: {}, currentWizardStep: 1 }; AuthService.clearCredentials(); document.getElementById('password-input').value = ''; document.getElementById('main-screen').classList.add('hidden'); document.getElementById('login-screen').classList.remove('hidden');
+            },
+
+            renderUserInfo() { /* ... same render logic ... */ },
+            renderMap() { /* Placeholder for map rendering */ },
+            checkForOverdueContainers() { /* ... */ },
+
+            renderActiveOrders(filter = null) {
+                const list = document.getElementById('active-orders-list');
+                list.innerHTML = '';
+                
+                const ordersToRender = filter === 'overdue' 
+                    ? this.state.orders.filter(o => this.isOrderOverdue(o))
+                    : this.state.orders;
+
+                if (!ordersToRender || ordersToRender.length === 0) {
+                    list.innerHTML = `<li class="text-center text-gray-500 p-8">${filter ? 'אין הזמנות חורגות' : 'אין הזמנות פעילות כרגע.'}</li>`;
+                    return;
+                }
+                
+                ordersToRender.forEach(order => {
+                    const isOverdue = this.isOrderOverdue(order);
+                    const statusColor = this.getStatusColor(order['סוג_פעולה']);
+                    const item = document.createElement('li');
+                    item.className = `card order-card p-4 flex justify-between items-center ${isOverdue ? 'overdue' : ''}`;
+                    item.innerHTML = `
+                        <div class="order-status-bar ${statusColor}"></div>
+                        <div class="flex-grow">
+                            <p class="font-bold">${order['סוג_פעולה'] || 'הזמנה'}</p>
+                            <p class="text-sm text-gray-500">${order['כתובת'] || 'לא צוינה כתובת'}</p>
+                        </div>
+                        <div class="text-left space-x-2">
+                             <span class="inline-block px-3 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">${order['סטטוס'] || 'לא ידוע'}</span>
+                             <button class="text-gray-500 hover:text-blue-600" onclick="App.duplicateOrder('${order['תעודה']}')"><i class="fas fa-copy"></i></button>
+                        </div>
+                    `;
+                    list.appendChild(item);
+                });
+            },
+
+            isOrderOverdue(order) {
+                // Placeholder logic:
+                // This would check against this.state.containers or a date in the order itself
+                return (order.סטטוס === 'חורג');
+            },
+            
+            getStatusColor(actionType) {
+                switch(actionType) {
+                    case 'הורדה': return 'status-green';
+                    case 'החלפה': return 'status-yellow';
+                    case 'הזזה': return 'status-blue';
+                    default: return 'bg-gray-300';
+                }
+            },
+
+            filterOverdueOrders() {
+                this.renderActiveOrders('overdue');
+            },
+            
+            duplicateOrder(orderId) {
+                const orderToCopy = this.state.orders.find(o => o['תעודה'] === orderId);
+                if (orderToCopy) {
+                    this.state.newOrder = { ...orderToCopy }; // Shallow copy
+                    this.navigateTo('order-wizard');
+                    Swal.fire('הזמנה שוכפלה', 'פרטי ההזמנה הועתקו לטופס הזמנה חדשה.', 'success');
+                }
+            },
+            
+            startOrderWizard() {
+                this.state.currentWizardStep = 1;
+                this.state.newOrder = {}; // Reset order object
+                this.renderWizardStep();
+            },
+
+            renderWizardStep() {
+                const wizardStepsContainer = document.getElementById('wizard-steps');
+                const wizardContentContainer = document.getElementById('wizard-content');
+                
+                const steps = [
+                    { number: 1, name: "פרטים" },
+                    { number: 2, name: "מיקום והנחיות" },
+                    { number: 3, name: "אישור סופי" }
+                ];
+
+                wizardStepsContainer.innerHTML = steps.map((step, index) => `
+                    <div class="flex-1 text-center ${index > 0 ? 'relative' : ''}">
+                        ${index > 0 ? '<div class="absolute w-full h-1 bg-gray-300 top-4 left-0 -translate-x-1/2 -z-10"></div>' : ''}
+                        <div class="w-8 h-8 rounded-full flex items-center justify-center mx-auto mb-1 font-bold ${this.state.currentWizardStep >= step.number ? 'bg-green-500 text-white' : 'bg-gray-300 text-gray-600'}">
+                            ${step.number}
+                        </div>
+                        <span class="text-xs">${step.name}</span>
+                    </div>
+                `).join('');
+
+                switch(this.state.currentWizardStep) {
+                    case 1: wizardContentContainer.innerHTML = this.renderWizardStep1(); break;
+                    // ... other steps to be added
+                }
+            },
+
+            renderWizardStep1() {
+                const projectOptions = this.state.projects.map(p => `<option value="${p['מזהה פרויקט']}">${p['שם פרויקט']}</option>`).join('');
+                
+                return `
+                    <div class="space-y-4">
+                        <div class="bg-gray-100 p-4 rounded-xl">
+                            <h4 class="font-semibold mb-2">פרויקט להזמנה</h4>
+                            <select id="project-select" class="input w-full">${projectOptions}</select>
+                        </div>
+                        <div class="bg-gray-100 p-4 rounded-xl">
+                            <h4 class="font-semibold mb-2">סוג פעולה</h4>
+                            <div class="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                                <!-- Action Buttons -->
+                                <button class="btn bg-gray-200 text-gray-800 flex flex-col items-center p-4 rounded-xl transition hover:bg-green-500 hover:text-white" data-action="הורדה"><i class="fas fa-arrow-alt-circle-down text-2xl mb-2"></i><span>הורדה</span></button>
+                                <button class="btn bg-gray-200 text-gray-800 flex flex-col items-center p-4 rounded-xl transition hover:bg-green-500 hover:text-white" data-action="החלפה"><i class="fas fa-sync-alt text-2xl mb-2"></i><span>החלפה</span></button>
+                                <button class="btn bg-gray-200 text-gray-800 flex flex-col items-center p-4 rounded-xl transition hover:bg-green-500 hover:text-white" data-action="העלאה"><i class="fas fa-arrow-alt-circle-up text-2xl mb-2"></i><span>העלאה</span></button>
+                                <button class="btn bg-gray-200 text-gray-800 flex flex-col items-center p-4 rounded-xl transition hover:bg-green-500 hover:text-white" data-action="פינוי במקום"><i class="fas fa-dumpster-fire text-2xl mb-2"></i><span>פינוי במקום</span></button>
+                                <button class="btn bg-gray-200 text-gray-800 flex flex-col items-center p-4 rounded-xl transition hover:bg-green-500 hover:text-white" data-action="הזזה"><i class="fas fa-arrows-alt text-2xl mb-2"></i><span>הזזה</span></button>
+                                <button class="btn bg-gray-200 text-gray-800 flex flex-col items-center p-4 rounded-xl transition hover:bg-green-500 hover:text-white" data-action="חומרים"><i class="fas fa-hard-hat text-2xl mb-2"></i><span>חומרים</span></button>
+                            </div>
+                        </div>
+                        <button id="next-to-step-2" class="btn bg-green-600 w-full disabled:bg-gray-400">המשך</button>
+                    </div>
+                `;
+            },
+            
+            async fetchCatalog() { /* ... */ },
+            renderCatalog() { /* ... */ },
+            renderOrderHistory() { /* Placeholder */ },
+            renderFAQs() { /* Placeholder */ },
+        };
+
+        document.addEventListener('DOMContentLoaded', () => {
+            App.init();
+        });
+    </script>
+</body>
+</html>
+
