@@ -465,10 +465,17 @@
                         this.startBackgroundSync();
                         this.renderUserInfo();
                         this.renderActiveOrders();
-                        this.navigateTo('main-screen');
+
+                        // Fix: Hide login screen and show main screen after successful login
+                        document.getElementById('login-screen').classList.add('hidden');
+                        document.getElementById('main-screen').classList.remove('hidden');
+                        this.navigateTo('dashboard-content');
+
                     } else {
                         Logger.warn('Login failed: Server response did not contain a user object.', data);
                         let errorMessage = 'פרטי התחברות שגויים או שהמשתמש אינו קיים.';
+                        let errorTitle = 'שגיאת התחברות';
+
                         if (data && data.reason) {
                             switch (data.reason) {
                                 case 'USER_NOT_FOUND':
@@ -478,10 +485,16 @@
                                     errorMessage = 'הסיסמה שהוזנה אינה נכונה.';
                                     break;
                             }
+                        } else if (data && data.success === true) {
+                            // This case handles a successful response that is missing user data and a reason.
+                            // It almost always means the server-side script is not the latest version.
+                            errorTitle = 'שגיאת תצורה בשרת';
+                            errorMessage = 'השרת ענה אך לא סיפק את המידע הנדרש. ייתכן שנדרש פרסום מחדש (Deploy) של קוד השרת.';
                         }
+
                         Swal.fire({
                             icon: 'error',
-                            title: 'שגיאת התחברות',
+                            title: errorTitle,
                             text: errorMessage,
                             confirmButtonText: 'אישור'
                         });
@@ -783,4 +796,7 @@
     </script>
 </body>
 </html>
+
+
+
 
