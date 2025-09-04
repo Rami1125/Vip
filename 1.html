@@ -367,12 +367,12 @@
             async api(action, payload = {}) {
                 try {
                     const url = new URL(this.API_URL);
-                    const bodyPayload = {
-                        action: action,
-                        payload: payload
-                    };
-                    const bodyString = JSON.stringify(bodyPayload);
-                    Logger.info(`API Call Started: ${action}`, `Sending body: ${bodyString}`);
+                    // NEW: Action is sent in the URL for robust routing
+                    url.searchParams.append('action', action);
+
+                    // NEW: Body only contains the payload
+                    const bodyString = JSON.stringify(payload);
+                    Logger.info(`API Call Started: ${action}`, `Sending payload: ${bodyString}`);
 
                     const response = await fetch(url.toString(), {
                         method: 'POST',
