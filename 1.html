@@ -156,8 +156,18 @@
             transform: translateY(-2px);
             background-color: #f0f4f8;
         }
+        .overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.5); z-index: 40;
+            opacity: 0; visibility: hidden; transition: opacity 0.3s ease;
+        }
         .overlay.active { opacity: 1; visibility: visible; }
         
+        .bottom-nav-link {
+            display: flex; flex-direction: column; align-items: center;
+            color: #A0AEC0; font-size: 0.75rem; flex: 1;
+            padding: 4px 0; transition: color 0.2s ease-in-out;
+        }
         .bottom-nav-link.active { color: var(--primary-color); font-weight: 600; }
         .order-card.overdue {
             background-color: #FFF5F5;
@@ -174,6 +184,14 @@
         .status-yellow { background-color: var(--warning-color); }
         .status-blue { background-color: var(--info-color); }
         
+        #toast-notification {
+            position: fixed;
+            bottom: 80px;
+            left: 50%;
+            transform: translate(-50%, 150%);
+            transition: transform 0.5s ease-in-out;
+            z-index: 100;
+        }
         #toast-notification.show { transform: translate(-50%, 0); }
     </style>
 </head>
@@ -213,16 +231,38 @@
                         <!-- Dashboard content as before -->
                      </div>
                      <div id="order-wizard" class="p-4 hidden">
-                        <!-- Order wizard content -->
+                        <h2 class="text-2xl font-bold text-center mb-6">יצירת הזמנה חדשה</h2>
+                        <div id="wizard-steps" class="flex justify-between items-center mb-6"></div>
+                        <div id="wizard-content"></div>
                      </div>
                      <!-- Other content divs -->
                 </main>
 
                 <footer id="bottom-nav" class="w-full bg-white border-t border-gray-200 flex justify-around">
-                    <!-- Nav links as before -->
+                    <a href="#" class="bottom-nav-link active" data-target="dashboard-content">
+                        <i class="fas fa-tachometer-alt"></i>
+                        <span>דאשבורד</span>
+                    </a>
+                    <a href="#" class="bottom-nav-link" data-target="order-wizard">
+                        <i class="fas fa-plus-circle"></i>
+                        <span>הזמנה</span>
+                    </a>
+                    <a href="#" class="bottom-nav-link" data-target="digital-store-content">
+                        <i class="fas fa-store-alt"></i>
+                        <span>חנות</span>
+                    </a>
+                    <a href="#" class="bottom-nav-link" data-target="history-content">
+                        <i class="fas fa-history"></i>
+                        <span>היסטוריה</span>
+                    </a>
                 </footer>
             </div>
-            <!-- Other divs like hamburger nav, overlay etc. -->
+            
+            <nav id="hamburger-nav" class="fixed top-0 right-0 w-64 h-full bg-white shadow-xl p-6 z-50 transform translate-x-full transition-transform duration-300 ease-in-out">
+               <!-- Hamburger nav content -->
+            </nav>
+            <div id="nav-overlay" class="overlay"></div>
+
         </div>
       </div>
     </div>
@@ -236,8 +276,8 @@
         dayjs.locale('he');
         dayjs.extend(dayjs_plugin_relativeTime);
 
-        const Logger = { /* ... as before ... */ };
-        const AuthService = { /* ... as before ... */ };
+        const Logger = { _log(level, color, message, data = '') { console[level](`%c[${new Date().toISOString()}] ${level.toUpperCase()}:`, `color: ${color}; font-weight: bold;`, message, data); }, info(message, data) { this._log('info', 'blue', message, data); }, warn(message, data) { this._log('warn', 'orange', message, data); }, error(message, data) { this._log('error', 'red', message, data); } };
+        const AuthService = { saveCredentials(phone, password) { localStorage.setItem('last_phone', phone); }, getPhone() { return localStorage.getItem('last_phone') || ''; }, getPassword() { return document.getElementById('password-input').value; }, clearCredentials() { localStorage.removeItem('last_phone'); } };
         
         const DeviceManager = {
             frame: document.getElementById('device-frame'),
@@ -260,19 +300,135 @@
         };
 
         const App = {
-            // ... State and other properties as before ...
+            state: {
+                user: null, projects: [], containers: [], orders: [],
+                catalog: [], newOrder: {}, currentWizardStep: 1, municipalGuidelines: [],
+            },
+            API_URL: 'https://script.google.com/macros/s/AKfycbwVx10n61lVBHHp8Icsp-7oNUOiq2w5yL72Mg8ZdV8cZ5IcSyk1wB_4WmkLAwZUALY/exec',
+            backgroundSyncInterval: null,
 
             init() {
                 Logger.info('App Initializing...');
-                DeviceManager.init(); // Initialize device layout handler
+                DeviceManager.init();
                 this.bindEvents();
                 this.navigateTo('login-screen');
                 document.getElementById('phone-input').value = AuthService.getPhone();
                 Logger.info('App Initialized successfully.');
             },
             
-            // ... All other methods like api, login, navigation etc. remain the same ...
+            showLoading(btn) { btn.disabled = true; btn.innerHTML = `<i class="fas fa-spinner fa-spin ml-2"></i> טוען...`; },
+            hideLoading(btn, text) { btn.disabled = false; btn.innerHTML = text; },
 
+            async api(action, payload = {}) {
+                try { const url = new URL(this.API_URL); url.searchParams.append('action', action); Logger.info(`API Call Started: ${action}`, payload); const response = await fetch(url.toString(), { method: 'POST', mode: 'cors', credentials: 'omit', redirect: 'follow', body: JSON.stringify(payload), }); if (!response.ok) { throw new Error(`שגיאת רשת: ${response.status} ${response.statusText}`); } const data = await response.json(); Logger.info(`API Call Succeeded: ${action}`, data); if (!data.success) { throw new Error(data.error || 'השרת החזיר שגיאה לא ידועה'); } return data; } catch (error) { Logger.error(`API Call Failed: ${action}`, error); throw error; }
+            },
+
+            async login() {
+                const phone = AuthService.getPhone();
+                const password = AuthService.getPassword();
+                const loginBtn = document.getElementById('login-btn');
+
+                this.showLoading(loginBtn);
+                try {
+                    Logger.info(`Login attempt for phone: ${phone}`);
+                    const data = await this.api('getUserData', { phone: phone, password: password });
+
+                    if (data && data.user) {
+                        this.state = { ...this.state, ...data };
+                        AuthService.saveCredentials(phone, password);
+                        
+                        this.startBackgroundSync();
+                        this.renderUserInfo();
+                        this.renderActiveOrders();
+
+                        document.getElementById('login-screen').classList.add('hidden');
+                        document.getElementById('main-screen').classList.remove('hidden');
+                        this.navigateTo('dashboard-content');
+
+                    } else {
+                         Logger.warn('Login failed: Server response did not contain a user object.', data); let errorMessage = 'פרטי התחברות שגויים או שהמשתמש אינו קיים.'; let errorTitle = 'שגיאת התחברות'; if (data && data.reason) { switch (data.reason) { case 'USER_NOT_FOUND': errorMessage = 'מספר הטלפון שהוזן אינו קיים במערכת.'; break; case 'PASSWORD_MISMATCH': errorMessage = 'הסיסמה שהוזנה אינה נכונה.'; break; } } else if (data && data.success === true) { errorTitle = 'שגיאת תצורה בשרת'; errorMessage = 'השרת ענה אך לא סיפק את המידע הנדרש. ייתכן שנדרש פרסום מחדש (Deploy) של קוד השרת.'; } Swal.fire({ icon: 'error', title: errorTitle, text: errorMessage, confirmButtonText: 'אישור' });
+                    }
+                } catch (error) {
+                    Logger.error('API Call Failed: getUserData', error); Swal.fire({ icon: 'error', title: 'שגיאת תקשורת', text: `אירעה שגיאה: ${error.message}`, confirmButtonText: 'אישור' });
+                } finally {
+                    this.hideLoading(loginBtn, 'התחבר למערכת');
+                }
+            },
+            
+            startBackgroundSync() { /* Placeholder */ },
+            stopBackgroundSync() { /* Placeholder */ },
+
+            bindEvents() {
+                document.getElementById('login-btn').addEventListener('click', () => this.login());
+                document.getElementById('phone-input').addEventListener('input', (e) => localStorage.setItem('last_phone', e.target.value));
+                document.getElementById('logout-btn').addEventListener('click', () => this.logout());
+
+                document.getElementById('hamburger-btn').addEventListener('click', () => this.toggleHamburgerMenu(true));
+                document.getElementById('close-hamburger-btn').addEventListener('click', () => this.toggleHamburgerMenu(false));
+                document.getElementById('nav-overlay').addEventListener('click', () => this.toggleHamburgerMenu(false));
+
+                document.querySelectorAll('#hamburger-nav .nav-link, #bottom-nav .bottom-nav-link').forEach(link => {
+                    link.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        const target = e.currentTarget.dataset.target;
+                        if (target) this.navigateTo(target);
+                        this.toggleHamburgerMenu(false);
+                    });
+                });
+            },
+            
+            toggleHamburgerMenu(open) { /* ... */ },
+
+            navigateTo(contentId) {
+                if (!contentId) return;
+                
+                document.querySelectorAll('#main-screen > main > div').forEach(div => div.classList.add('hidden'));
+                const targetContent = document.getElementById(contentId);
+                if(targetContent) {
+                    targetContent.classList.remove('hidden');
+                } else {
+                    document.getElementById('dashboard-content').classList.remove('hidden');
+                    contentId = 'dashboard-content';
+                }
+                
+                document.querySelectorAll('#bottom-nav .bottom-nav-link').forEach(link => {
+                    link.classList.toggle('active', link.dataset.target === contentId);
+                });
+
+                if(contentId === 'order-wizard') this.startOrderWizard();
+            },
+            
+            logout() { /* ... */ },
+            renderUserInfo() { /* ... */ },
+            renderActiveOrders(filter = null) { /* ... */},
+            
+            async startOrderWizard() {
+                this.state.currentWizardStep = 1;
+                this.state.newOrder = {}; 
+                if (this.state.projects && this.state.projects.length === 1) {
+                    this.state.newOrder.projectId = this.state.projects[0]['מזהה פרויקט'];
+                }
+                this.renderWizardStep();
+            },
+
+            renderWizardStep() {
+                const wizardStepsContainer = document.getElementById('wizard-steps');
+                const wizardContentContainer = document.getElementById('wizard-content');
+                const steps = [ { number: 1, name: "פרטים" }, { number: 2, name: "מיקום והנחיות" }, { number: 3, name: "אישור סופי" } ];
+
+                wizardStepsContainer.innerHTML = steps.map((step, index) => { /* ... */ }).join('');
+
+                switch(this.state.currentWizardStep) {
+                    case 1: wizardContentContainer.innerHTML = this.renderWizardStep1(); break;
+                }
+                
+                this.bindWizardStepEvents();
+            },
+
+            bindWizardStepEvents() {
+                if (this.state.currentWizardStep === 1) this.bindStep1Events();
+            },
+            
             bindStep1Events() {
                 const nextButton = document.getElementById('wizard-next-btn');
                 
