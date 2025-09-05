@@ -70,27 +70,48 @@
             },
 
             init: function() {
-                // Check if API key is already stored
-                const storedApiKey = localStorage.getItem('apiKey');
-                if (storedApiKey) {
-                    this.state.apiKey = storedApiKey;
-                    this.showToast('מנסה להתחבר מחדש...');
-                    this.apiClient('login', {}).then(response => {
-                        if (response.success) {
-                            this.showToast('התחברות אוטומטית הצליחה!', 'success');
-                            // You would typically fetch user data here after a successful key validation
-                            this.fetchInitialData();
-                            this.navigateTo('main');
-                        } else {
-                            this.handleLogout();
-                            this.showToast('מפתח API לא תקין. יש להתחבר מחדש.', 'error');
-                        }
-                    });
+                try {
+                    // Check if running from a local file, which is not supported for API calls.
+                    if (window.location.protocol === 'file:') {
+                        document.getElementById('app-container').innerHTML = `
+                            <div class="text-center">
+                                <h1 class="text-2xl font-bold text-red-600 mb-4">שגיאת טעינה</h1>
+                                <p class="text-gray-700">לא ניתן להפעיל את האפליקציה ישירות מקובץ מקומי.</p>
+                                <p class="text-gray-700 mt-2">יש להריץ את הקובץ משרת אינטרנט (כמו GitHub Pages) כדי לאפשר תקשורת מאובטחת.</p>
+                            </div>
+                        `;
+                        return; // Stop execution
+                    }
+
+                    // Check if API key is already stored
+                    const storedApiKey = localStorage.getItem('apiKey');
+                    if (storedApiKey) {
+                        this.state.apiKey = storedApiKey;
+                        this.showToast('מנסה להתחבר מחדש...');
+                        this.apiClient('login', {}).then(response => {
+                            if (response && response.success) {
+                                this.showToast('התחברות אוטומטית הצליחה!', 'success');
+                                this.fetchInitialData();
+                                this.navigateTo('main');
+                            } else {
+                                this.handleLogout();
+                                this.showToast('מפתח API לא תקין או שגיאת רשת.', 'error');
+                            }
+                        }).catch(err => {
+                             console.error("Auto-login failed:", err);
+                             this.handleLogout();
+                             this.showToast('שגיאת תקשורת בחיבור האוטומטי.', 'error');
+                        });
+                    }
+                    
+                    // Event Listeners
+                    document.getElementById('login-button').addEventListener('click', this.handleLogin.bind(this));
+                    document.getElementById('logout-button').addEventListener('click', this.handleLogout.bind(this));
+
+                } catch (e) {
+                    console.error("Initialization failed:", e);
+                    document.body.innerHTML = `<div class="text-center p-5 text-red-600">שגיאה קריטית באתחול האפליקציה. בדוק את ה-Console.</div>`;
                 }
-                
-                // Event Listeners
-                document.getElementById('login-button').addEventListener('click', this.handleLogin.bind(this));
-                document.getElementById('logout-button').addEventListener('click', this.handleLogout.bind(this));
             },
 
             /**
@@ -171,10 +192,7 @@
 
             fetchInitialData: async function() {
                 // This simulates the old login flow but for an already authenticated user.
-                // In a real app, you might have a getMyData endpoint.
-                // For now, we'll hardcode a phone number or get it from a stored profile.
-                // Let's assume we need to ask for it once after API key login.
-                const phone = prompt(" לצורך הדגמה, אנא הזן מספר טלפון לשליפת נתונים:", "050-8860896");
+                const phone = prompt("לצורך הדגמה, אנא הזן מספר טלפון לשליפת נתונים:", "050-8860896");
                 if (!phone) {
                     this.handleLogout();
                     return;
@@ -290,3 +308,4 @@
     </script>
 </body>
 </html>
+
