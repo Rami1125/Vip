@@ -85,7 +85,7 @@
             this.render();
         },
         api: async function(action, payload = {}) {
-            const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyb8iYI9ul2zMNwnfct5l9DJOCWYEzmxTFjaqCrKtYuAjKErYsMJted3Vl-bvOP_PGZeg/exec'; // TODO: Replace with your deployed script URL
+            const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbziKRXfz_TOa5wU-d8s54VwWnueGIhOJExFTJ9LTOELqi5aQsG3h0QAbTPK5oB4wtYs1Q/exec'; // TODO: Replace with your deployed script URL
             try {
                 const response = await fetch(`${SCRIPT_URL}?action=${action}`, {
                     method: 'POST',
