@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>מערכת VIP ח. סבן (מאובטח)</title>
+    <title>מערכת VIP ח. סבן</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
@@ -25,13 +25,14 @@
         <!-- Login Page -->
         <div id="login-page" class="page active">
             <h1 class="text-2xl font-bold text-center text-gray-800 mb-2">מערכת VIP</h1>
-            <p class="text-center text-gray-500 mb-6">נא להזין מפתח גישה (API Key)</p>
+            <p class="text-center text-gray-500 mb-6">התחברות למערכת</p>
             <div class="space-y-4">
-                <input type="password" id="api-key-input" placeholder="מפתח API" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-left">
+                <input type="tel" id="phone-input" placeholder="מספר טלפון" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <input type="password" id="password-input" placeholder="סיסמה" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
                 <button id="login-button" class="w-full bg-blue-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-700 transition duration-300">
                     התחברות
                 </button>
-                <div id="login-error" class="text-red-500 text-sm text-center"></div>
+                <div id="login-error" class="text-red-500 text-sm text-center h-4"></div>
             </div>
         </div>
 
@@ -57,11 +58,10 @@
     <div id="toast-notification" class="toast"></div>
 
     <script>
-        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxPsoBC-Ns59dap9PnFa__l1ZPmWONfsVBEJOZTjsp8E2e_t6qVwMmXPj-rm-EGNxrJVQ/exec";
+        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxPsoBC-Ns59dap9PnFa__l1ZPmWONfsVBEJOZTjsp8E2e_t6qVwMmXPj-rm-EGNxrJVQ/exec"; // Make sure this URL is updated after deploying the new script
 
         const App = {
             state: {
-                apiKey: null,
                 user: null,
                 projects: [],
                 orders: [],
@@ -70,88 +70,18 @@
             },
 
             init: function() {
-                try {
-                    // Check if running from a local file, which is not supported for API calls.
-                    if (window.location.protocol === 'file:') {
-                        document.getElementById('app-container').innerHTML = `
-                            <div class="text-center">
-                                <h1 class="text-2xl font-bold text-red-600 mb-4">שגיאת טעינה</h1>
-                                <p class="text-gray-700">לא ניתן להפעיל את האפליקציה ישירות מקובץ מקומי.</p>
-                                <p class="text-gray-700 mt-2">יש להריץ את הקובץ משרת אינטרנט (כמו GitHub Pages) כדי לאפשר תקשורת מאובטחת.</p>
-                            </div>
-                        `;
-                        return; // Stop execution
-                    }
-
-                    // Check if API key is already stored
-                    const storedApiKey = localStorage.getItem('apiKey');
-                    if (storedApiKey) {
-                        this.state.apiKey = storedApiKey;
-                        this.showToast('מנסה להתחבר מחדש...');
-                        this.apiClient('login', {}).then(response => {
-                            if (response && response.success) {
-                                this.showToast('התחברות אוטומטית הצליחה!', 'success');
-                                this.fetchInitialData();
-                                this.navigateTo('main');
-                            } else {
-                                this.handleLogout();
-                                this.showToast('מפתח API לא תקין או שגיאת רשת.', 'error');
-                            }
-                        }).catch(err => {
-                             console.error("Auto-login failed:", err);
-                             this.handleLogout();
-                             this.showToast('שגיאת תקשורת בחיבור האוטומטי.', 'error');
-                        });
-                    }
-                    
-                    // Event Listeners
-                    document.getElementById('login-button').addEventListener('click', this.handleLogin.bind(this));
-                    document.getElementById('logout-button').addEventListener('click', this.handleLogout.bind(this));
-
-                } catch (e) {
-                    console.error("Initialization failed:", e);
-                    document.body.innerHTML = `<div class="text-center p-5 text-red-600">שגיאה קריטית באתחול האפליקציה. בדוק את ה-Console.</div>`;
-                }
+                // Event Listeners
+                document.getElementById('login-button').addEventListener('click', this.handleLogin.bind(this));
+                document.getElementById('logout-button').addEventListener('click', this.handleLogout.bind(this));
             },
 
-            /**
-             * Central API client for making requests to the server.
-             * @param {string} action - The server-side action to call.
-             * @param {object} data - The payload to send.
-             * @returns {Promise<object>} - The JSON response from the server.
-             */
             apiClient: async function(action, data) {
-                const apiKey = this.state.apiKey;
-                if (!apiKey && action !== 'login') {
-                    this.showToast('שגיאה: מפתח API לא קיים.', 'error');
-                    this.handleLogout(); // Force logout if key is missing
-                    return { success: false, error: 'API Key not found.' };
-                }
-
                 try {
                     const response = await fetch(SCRIPT_URL, {
                         method: 'POST',
-                        headers: {
-                            'Content-Type': 'text/plain;charset=utf-8', // Required for Apps Script
-                        },
-                        // We need to construct a special request for doPost to work
-                        body: JSON.stringify({
-                            // Pass authorization header as a parameter
-                            authorization: `Bearer ${apiKey}`,
-                            action: action,
-                            data: data
-                        })
+                        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                        body: JSON.stringify({ action, data })
                     });
-
-                    if (response.status === 401) {
-                         this.showToast('שגיאת אימות. נא להתחבר מחדש.', 'error');
-                         this.handleLogout();
-                         return { success: false, error: 'Unauthorized' };
-                    }
-                     if (response.status === 429) {
-                         this.showToast('יותר מדי בקשות. נסה שוב מאוחר יותר.', 'error');
-                         return { success: false, error: 'Rate Limited' };
-                    }
                     if (!response.ok) {
                         throw new Error(`HTTP error! status: ${response.status}`);
                     }
@@ -164,47 +94,27 @@
             },
 
             handleLogin: async function() {
-                const apiKeyInput = document.getElementById('api-key-input');
-                const apiKey = apiKeyInput.value.trim();
+                const phone = document.getElementById('phone-input').value.trim();
+                const password = document.getElementById('password-input').value.trim();
                 const errorEl = document.getElementById('login-error');
                 errorEl.textContent = '';
 
-                if (!apiKey) {
-                    errorEl.textContent = 'יש להזין מפתח גישה.';
+                if (!phone || !password) {
+                    errorEl.textContent = 'יש להזין מספר טלפון וסיסמה.';
                     return;
                 }
                 
-                this.state.apiKey = apiKey; // Temporarily set key to test it
-
-                const response = await this.apiClient('login', {});
+                const response = await this.apiClient('login', { phone, password });
                 
-                if (response.success) {
-                    localStorage.setItem('apiKey', apiKey);
-                    this.showToast('התחברות הצליחה!', 'success');
-                    await this.fetchInitialData();
-                    this.navigateTo('main');
-                } else {
-                    this.state.apiKey = null; // Clear invalid key
-                    localStorage.removeItem('apiKey');
-                    errorEl.textContent = response.error || 'מפתח גישה שגוי.';
-                }
-            },
-
-            fetchInitialData: async function() {
-                // This simulates the old login flow but for an already authenticated user.
-                const phone = prompt("לצורך הדגמה, אנא הזן מספר טלפון לשליפת נתונים:", "050-8860896");
-                if (!phone) {
-                    this.handleLogout();
-                    return;
-                }
-                const response = await this.apiClient('getClientData', { phone: phone });
                 if (response.success) {
                     this.state.user = response.user;
                     this.state.projects = response.projects;
                     this.state.orders = response.orders;
+                    this.showToast('התחברות הצליחה!', 'success');
                     this.renderMainPage();
+                    this.navigateTo('main');
                 } else {
-                    this.showToast(`שגיאה בשליפת נתונים: ${response.error}`, 'error');
+                    errorEl.textContent = response.error || 'פרטי התחברות שגויים.';
                 }
             },
 
@@ -225,13 +135,11 @@
                         `;
                     });
                 }
-                this.startPolling(); // Start polling for updates after rendering
+                this.startPolling();
             },
             
             startPolling: function() {
-                if (this.state.pollingTimeoutId) {
-                    clearTimeout(this.state.pollingTimeoutId);
-                }
+                if (this.state.pollingTimeoutId) clearTimeout(this.state.pollingTimeoutId);
 
                 const poll = async () => {
                     const response = await this.apiClient('pollUpdates', { since: this.state.lastUpdateTimestamp });
@@ -239,7 +147,6 @@
                         this.state.lastUpdateTimestamp = response.latestTimestamp;
                         this.renderUpdates(response.updates);
                     }
-                    // Schedule next poll
                     this.state.pollingTimeoutId = setTimeout(poll, 5000); // Poll every 5 seconds
                 };
                 
@@ -255,31 +162,26 @@
             
             renderUpdates: function(updates) {
                 const updatesContainer = document.getElementById('live-updates');
-                // Clear initial message if it exists
                 if (updatesContainer.querySelector('p.text-gray-400')) {
                     updatesContainer.innerHTML = '';
                 }
-                
                 updates.forEach(update => {
                     const updateEl = document.createElement('div');
                     updateEl.className = 'p-1 bg-blue-50 border-b border-blue-200';
                     const time = new Date(update.timestamp).toLocaleTimeString('he-IL');
                     updateEl.innerHTML = `<strong>[${time}]</strong>: ${update.action}`;
-                    updatesContainer.prepend(updateEl); // Add new updates to the top
+                    updatesContainer.prepend(updateEl);
                     this.showToast('עדכון חדש התקבל!', 'info');
                 });
             },
 
             handleLogout: function() {
                 this.stopPolling();
-                localStorage.removeItem('apiKey');
-                this.state.apiKey = null;
                 this.state.user = null;
                 this.state.projects = [];
                 this.state.orders = [];
-                this.state.lastUpdateTimestamp = new Date(0).toISOString();
-                document.getElementById('api-key-input').value = '';
-                document.getElementById('live-updates').innerHTML = '<p class="text-gray-400">ממתין לעדכונים...</p>';
+                document.getElementById('phone-input').value = '';
+                document.getElementById('password-input').value = '';
                 this.navigateTo('login');
             },
 
@@ -291,20 +193,16 @@
             showToast: function(message, type = 'info') {
                 const toast = document.getElementById('toast-notification');
                 toast.textContent = message;
-                toast.className = 'toast show'; // Reset classes
+                toast.className = 'toast show';
                 if (type === 'success') toast.classList.add('bg-green-600');
                 else if (type === 'error') toast.classList.add('bg-red-600');
                 else toast.classList.add('bg-gray-800');
 
-                setTimeout(() => {
-                    toast.classList.remove('show');
-                }, 3000);
+                setTimeout(() => { toast.classList.remove('show'); }, 3000);
             }
         };
 
-        document.addEventListener('DOMContentLoaded', () => {
-            App.init();
-        });
+        document.addEventListener('DOMContentLoaded', () => App.init());
     </script>
 </body>
 </html>
