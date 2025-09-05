@@ -325,7 +325,7 @@
             },
 
             async fetchUserData() {
-                const url = `https://script.google.com/macros/s/AKfycbwVx10n61lVBHHp8Icsp-7oNUOiq2w5yL72Mg8ZdV8cZ5IcSyk1wB_4WmkLAwZUALY/exec?action=getUserData`;
+                const url = `https://script.google.com/macros/s/AKfycbzmnyD48gcii6f-YFfSyG_DiHmCnhpk2_EgfwZRtDnpEwIcNJ5BIBCXd15mHtVbcX7Z/exec?action=getUserData`;
                 const postData = { phone: this.state.userPhone };
                 const data = await fetchWithSpinner(url, {
                     method: 'POST',
